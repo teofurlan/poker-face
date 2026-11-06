@@ -26,11 +26,11 @@ What it is **not**: a lie detector. The question the game asks is *"did you crac
 
 ## Demo
 
-*Coming soon: a real round recorded with friends, showing the live Presage signals driving the game.*
+*Coming soon...*
 
 ## Code
 
-*Repository: [github.com/teofurlan/poker-face](https://github.com/teofurlan/poker-face). Setup instructions will be in the README as soon as there is something to set up.*
+*Repository: [github.com/teofurlan/poker-face](https://github.com/teofurlan/poker-face)*
 
 ## How It Responds to Human Signals
 
