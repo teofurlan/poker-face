@@ -1,0 +1,284 @@
+{
+  "phase": "face",
+  "runMs": 60000,
+  "date": "2026-11-10T13:04:22.821Z",
+  "counts": {
+    "metricsEvents": 1688,
+    "expression": 1660,
+    "blinking": 1708,
+    "talking": 1708,
+    "landmarks": 1663
+  },
+  "validation": {
+    "0": 1799
+  },
+  "pipelineMs": {
+    "n": 0,
+    "p50": null,
+    "p95": null,
+    "max": null
+  },
+  "cueLatencyMs": [
+    {
+      "cue": "smile",
+      "latencyMs": null
+    },
+    {
+      "cue": "blink",
+      "latencyMs": 1138
+    },
+    {
+      "cue": "talk",
+      "latencyMs": 1307
+    },
+    {
+      "cue": "surprise",
+      "latencyMs": null
+    }
+  ],
+  "rest": {
+    "samples": 660,
+    "perClass": {
+      "ANGRY": {
+        "mean": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "CONTEMPT": {
+        "mean": 0.8,
+        "p95": 1.8075274229049683,
+        "max": 10.689352035522461
+      },
+      "DISGUST": {
+        "mean": 0.3,
+        "p95": 0.7533369660377502,
+        "max": 5.223931312561035
+      },
+      "FEAR": {
+        "mean": 0,
+        "p95": 0.06306830793619156,
+        "max": 0.13900703191757202
+      },
+      "HAPPY": {
+        "mean": 3,
+        "p95": 14.878103256225586,
+        "max": 31.02276611328125
+      },
+      "NEUTRAL": {
+        "mean": 0,
+        "p95": 0.005466534290462732,
+        "max": 0.019406942650675774
+      },
+      "SAD": {
+        "mean": 92,
+        "p95": 97.27045440673828,
+        "max": 97.9107437133789
+      },
+      "SURPRISE": {
+        "mean": 1.8,
+        "p95": 3.6508641242980957,
+        "max": 18.525239944458008
+      }
+    },
+    "falseCrackSamples": {
+      "delta15": 522,
+      "delta25": 1,
+      "delta40": 0
+    }
+  },
+  "delta": 25,
+  "baseline": {
+    "ANGRY": 0,
+    "CONTEMPT": 0.2,
+    "DISGUST": 11.4,
+    "FEAR": 0,
+    "HAPPY": 5,
+    "NEUTRAL": 0.2,
+    "SAD": 75.8,
+    "SURPRISE": 1
+  },
+  "cuePeaks": [
+    {
+      "cue": "smile",
+      "idx": 1,
+      "samples": 120,
+      "peakRise": {
+        "ANGRY": 0,
+        "CONTEMPT": 0.1,
+        "DISGUST": 71.4,
+        "FEAR": 0.3,
+        "HAPPY": -4.2,
+        "NEUTRAL": 99.8,
+        "SAD": 22.1,
+        "SURPRISE": 0.8
+      }
+    },
+    {
+      "cue": "rest",
+      "idx": 2,
+      "samples": 151,
+      "peakRise": {
+        "ANGRY": 0,
+        "CONTEMPT": 0.1,
+        "DISGUST": 66.1,
+        "FEAR": 0.6,
+        "HAPPY": 22.9,
+        "NEUTRAL": 99.7,
+        "SAD": 22.1,
+        "SURPRISE": 0.9
+      }
+    },
+    {
+      "cue": "blink",
+      "idx": 3,
+      "samples": 90,
+      "peakRise": {
+        "ANGRY": 0,
+        "CONTEMPT": 0.1,
+        "DISGUST": -4.7,
+        "FEAR": 0.1,
+        "HAPPY": 3.7,
+        "NEUTRAL": -0.1,
+        "SAD": 22.3,
+        "SURPRISE": 0
+      }
+    },
+    {
+      "cue": "rest",
+      "idx": 4,
+      "samples": 150,
+      "peakRise": {
+        "ANGRY": 0,
+        "CONTEMPT": 0.3,
+        "DISGUST": -10.7,
+        "FEAR": 0.1,
+        "HAPPY": 26,
+        "NEUTRAL": -0.2,
+        "SAD": 22.3,
+        "SURPRISE": 1.3
+      }
+    },
+    {
+      "cue": "talk",
+      "idx": 5,
+      "samples": 91,
+      "peakRise": {
+        "ANGRY": 0,
+        "CONTEMPT": 0.9,
+        "DISGUST": -10.6,
+        "FEAR": 0.3,
+        "HAPPY": -1,
+        "NEUTRAL": -0.2,
+        "SAD": 22,
+        "SURPRISE": 2
+      }
+    },
+    {
+      "cue": "rest",
+      "idx": 6,
+      "samples": 150,
+      "peakRise": {
+        "ANGRY": 0,
+        "CONTEMPT": 1.5,
+        "DISGUST": -11,
+        "FEAR": 0.1,
+        "HAPPY": 7.1,
+        "NEUTRAL": -0.2,
+        "SAD": 21.7,
+        "SURPRISE": 6.7
+      }
+    },
+    {
+      "cue": "surprise",
+      "idx": 7,
+      "samples": 120,
+      "peakRise": {
+        "ANGRY": 0,
+        "CONTEMPT": 5.9,
+        "DISGUST": -10.3,
+        "FEAR": 1.6,
+        "HAPPY": 43.2,
+        "NEUTRAL": 3.9,
+        "SAD": 21.6,
+        "SURPRISE": 2.2
+      }
+    },
+    {
+      "cue": "rest",
+      "idx": 8,
+      "samples": 392,
+      "peakRise": {
+        "ANGRY": 0,
+        "CONTEMPT": 15.6,
+        "DISGUST": 2,
+        "FEAR": 7.4,
+        "HAPPY": 0.6,
+        "NEUTRAL": 0,
+        "SAD": 21.8,
+        "SURPRISE": 17.5
+      }
+    }
+  ],
+  "tsProbe": {
+    "frameSent": [
+      1794315801790399,
+      1794315801822400,
+      1794315801854405,
+      1794315801886407,
+      1794315801918399
+    ],
+    "sample": [
+      {
+        "low": -1272370023,
+        "high": 417771,
+        "unsigned": false
+      },
+      {
+        "low": -1272337970,
+        "high": 417771,
+        "unsigned": false
+      },
+      {
+        "low": -1272306052,
+        "high": 417771,
+        "unsigned": false
+      },
+      {
+        "low": -1272274034,
+        "high": 417771,
+        "unsigned": false
+      },
+      {
+        "low": -1272242011,
+        "high": 417771,
+        "unsigned": false
+      }
+    ],
+    "callback": [
+      1794315804814489,
+      1794315804878460,
+      1794315804910478,
+      1794315804942501,
+      1794315804974488
+    ]
+  },
+  "arrivalJitterMs": {
+    "n": 1708,
+    "p50": 45,
+    "p95": 54.1,
+    "max": 428.1,
+    "minOffsetMs": 4.5
+  },
+  "vitals": {
+    "pulse": {
+      "n": 0,
+      "firstAtMs": null,
+      "values": []
+    },
+    "breathing": {
+      "n": 0,
+      "firstAtMs": null,
+      "values": []
+    }
+  }
+}

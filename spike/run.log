@@ -1,0 +1,27 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1793986239.018692   30684 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1793986239.018942   25488 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1793986239.054947   26688 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1793986239.302208   27992 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1793986239.323976   27992 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+1.30s processingStatus 1
+1.88s processingStatus 2
+1.88s processingStatus 5
+1.89s error 7 SmartSpectra input is unavailable. retryable= true
+C:\Users\teofu\Code\ideaslab\poker-face\spike\node_modules\@smartspectra\node-sdk\js\ffi.js:586
+    const e = new Error(msg);
+              ^
+
+Error: SmartSpectra input is unavailable.
+    at makeFfiError (C:\Users\teofu\Code\ideaslab\poker-face\spike\node_modules\@smartspectra\node-sdk\js\ffi.js:586:15)
+    at Session.startCamera (C:\Users\teofu\Code\ideaslab\poker-face\spike\node_modules\@smartspectra\node-sdk\js\ffi.js:406:29)
+    at SmartSpectraSDK.start (C:\Users\teofu\Code\ideaslab\poker-face\spike\node_modules\@smartspectra\node-sdk\js\smartspectra.js:176:53)
+    at file:///C:/Users/teofu/Code/ideaslab/poker-face/spike/check.mjs:30:5
+    at ModuleJob.run (node:internal/modules/esm/module_job:329:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  code: 7,
+  retryable: true
+}
+
+Node.js v22.17.0

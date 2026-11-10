@@ -1,0 +1,28 @@
+camera: ACER HD User Facing
+W20261109 20:20:18.696074 38136 smartspectra.cc:1335] Device key provisioning did not complete; continuing with locally-available models. Remote EMD model delivery is unavailable this session: Operation timed out: POST /v2/device_keys failed. Response:
+ Status: 0
+ Curl Error: Resolving timed out after 3010 milliseconds
+ Error Code: OPERATION_TIMEDOUT
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1794266418.877297   11464 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1794266418.877297   34380 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1794266418.900489   34380 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1794266418.947235   34372 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1794266418.961626   34372 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+11.63s processingStatus 1
+E20261109 20:20:29.926438 38136 auth_client.cc:441] Usage verification failed. Status code: 0
+E20261109 20:20:29.929009 17608 auth_client.cc:441] Usage verification failed. Status code: 0
+22.76s processingStatus 2
+22.76s started; stopping after 30 s
+23.23s error 5 A network error occurred during SmartSpectra processing. retryable= true
+23.23s processingStatus 5
+E20261109 20:20:30.933699 17608 auth_client.cc:441] Usage verification failed. Status code: 0
+E20261109 20:20:31.182283 31612 rest_api_client.cc:926] Metrics authorization failed: Failed to resolve host: Metrics authorization failed. Response:
+ Status: 0
+ Curl Error: Could not resolve host: cont-api.physiology.presagetech.com
+ Error Code: COULDNT_RESOLVE_HOST
+W20261109 20:20:31.182829 31612 metric_gating_calculator.cc:171] MetricGatingCalculator: Callback fired after calculator destroyed, aborting
+E20261109 20:20:31.444491 36796 secure_model_loader.cc:276] LoadInternal failed for model_id=phasic-bp-inference, error=model load cancelled
+E20261109 20:20:31.444491 36796 physiology_inference_calculator.cc:562] Model load failed.
+52.77s stopping; metrics so far: 0
+52.78s stopped; metrics events received: 0

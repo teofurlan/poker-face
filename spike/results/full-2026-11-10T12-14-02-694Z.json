@@ -1,0 +1,101 @@
+{
+  "phase": "full",
+  "runMs": 90000,
+  "date": "2026-11-10T12:14:02.694Z",
+  "counts": {
+    "metricsEvents": 2549,
+    "expression": 0,
+    "blinking": 2611,
+    "talking": 2611,
+    "landmarks": 0
+  },
+  "validation": {
+    "0": 1,
+    "7": 2701
+  },
+  "pipelineMs": {
+    "n": 0,
+    "p50": null,
+    "p95": null,
+    "max": null
+  },
+  "cueLatencyMs": [
+    {
+      "cue": "smile",
+      "latencyMs": null
+    },
+    {
+      "cue": "blink",
+      "latencyMs": 431
+    },
+    {
+      "cue": "talk",
+      "latencyMs": 1038
+    },
+    {
+      "cue": "surprise",
+      "latencyMs": null
+    }
+  ],
+  "rest": {
+    "samples": 0,
+    "perClass": {
+      "ANGRY": {
+        "mean": null,
+        "p95": null,
+        "max": null
+      },
+      "CONTEMPT": {
+        "mean": null,
+        "p95": null,
+        "max": null
+      },
+      "DISGUST": {
+        "mean": null,
+        "p95": null,
+        "max": null
+      },
+      "FEAR": {
+        "mean": null,
+        "p95": null,
+        "max": null
+      },
+      "HAPPY": {
+        "mean": null,
+        "p95": null,
+        "max": null
+      },
+      "NEUTRAL": {
+        "mean": null,
+        "p95": null,
+        "max": null
+      },
+      "SAD": {
+        "mean": null,
+        "p95": null,
+        "max": null
+      },
+      "SURPRISE": {
+        "mean": null,
+        "p95": null,
+        "max": null
+      }
+    },
+    "falseCrackSamples": {
+      "at50": 0,
+      "at70": 0
+    }
+  },
+  "vitals": {
+    "pulse": {
+      "n": 0,
+      "firstAtMs": null,
+      "values": []
+    },
+    "breathing": {
+      "n": 0,
+      "firstAtMs": null,
+      "values": []
+    }
+  }
+}
