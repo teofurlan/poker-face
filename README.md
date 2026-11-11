@@ -78,6 +78,6 @@ From the [SmartSpectra docs](https://smartspectra.presagetech.com/docs), read 20
 ## Open questions
 
 - The final name.
-- The tech stack, which depends on the spike: Electron or a browser front end with a local Node server.
+- ~~The tech stack~~: decided 2026-11-11, an Electron desktop app (TypeScript, electron-vite, React); see [the stack ticket](https://github.com/teofurlan/poker-face/issues/5).
 - Whether the observers also see the pulse or breathing live, or only the cracks. The trade-off is drama versus privacy.
 - Whether to add an optional "dare deck" of prompts for the challengers.

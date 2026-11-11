@@ -32,6 +32,8 @@ What it is **not**: a lie detector. The question the game asks is *"did you crac
 
 *Repository: [github.com/teofurlan/poker-face](https://github.com/teofurlan/poker-face)*
 
+**Planned stack:** a Windows desktop app built with Electron, TypeScript, electron-vite and React, running the SmartSpectra Node SDK in the same app. One fullscreen window is the shared screen for the whole room (mirror it to a TV if you have one). You can run it from source (`npm install`, `npm start`), and I'm aiming for a packaged Windows `.exe` as well. On first launch it asks for your Presage API key and lets you pick your camera from a list.
+
 ## How It Responds to Human Signals
 
 The design splits the SmartSpectra signals by speed:
@@ -64,6 +66,7 @@ Most human-sensing apps point the camera at you to help you calm down. Poker Fac
 - **The camera runs only during your round,** with a visible indicator, and stops when the round ends.
 - **No video is recorded, stored or uploaded.** Only the list of crack events (a timestamp and type) is kept, in memory, to draw the replay. It is cleared when the session ends.
 - **Network:** SmartSpectra processes frames on-device. The SDK contacts the Presage backend to validate the API key, so it needs an internet connection. By default it also sends one aggregate diagnostic summary per session (SDK version, platform, frame-rate and quality counts). Per Presage's docs, that summary never contains video frames, measured values or user identifiers, and it can be turned off with `enableTelemetry: false`. Poker Face turns it off.
+- **Your API key stays on your computer.** The key you enter is saved only on your machine, encrypted with Electron's `safeStorage` (backed by Windows' own data protection), and is used only by the SDK to authenticate with Presage. Developers can set the `PRESAGE_API_KEY` environment variable instead.
 - **No health or truth claims.** The game does not diagnose, measure stress clinically, or decide whether anyone is lying.
 
 ## Agent Session
@@ -75,3 +78,4 @@ Most human-sensing apps point the camera at you to help you calm down. Poker Fac
 - **2026-11-06:** Idea and framing decided; repository created; planning in progress. Next: a technical spike to measure how fast expression and blink events arrive (the go/no-go for live cracks).
 - **2026-11-09:** SDK research done. Blink, talking and 8-class expression scores arrive at frame cadence (about 30 Hz); the SDK tracks exactly one face, so only the hot-seat player can be in frame; telemetry confirmed and documented above. Still to verify in the spike: that face metrics are enabled for this API key, and the real event latency.
 - **2026-11-10:** Spike done: go. Face samples arrive in about 50 ms, and a deliberate crack shows on screen about 1-2 s after the cue. Cracks are measured as change from the player's own baseline, because the raw expression labels misread a resting face. Blinks and vitals are out as crack signals. Next: decide what a round looks like.
+- **2026-11-11:** Stack decided: an Electron desktop app (TypeScript, electron-vite, React) in one fullscreen window. It runs from source, and I'll try to package a Windows `.exe` in the first build step; if packaging isn't working by 2026-11-15, the app ships as source-only and the post will say so. First launch asks for the API key and the camera.
