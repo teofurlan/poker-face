@@ -12,7 +12,9 @@ tags: devchallenge, presagechallenge, gamedev, webdev
 
 **Poker Face** is a party game for a room of friends and one webcam.
 
-One player sits in the hot seat and has a single job: **keep a straight face.** Everyone else has 60-90 seconds to crack them with awkward questions, terrible jokes, fake bluffs or plain staring.
+One player sits in the hot seat and has a single job: **keep a straight face, and keep quiet.** Everyone else has 60 seconds to crack them with awkward questions, terrible jokes, fake bluffs or plain staring.
+
+Each person takes the hot seat once, in turn (one to six people). The player with the fewest cracks wins; on a tie, whoever held out longest before their first crack wins. A rematch starts a fresh leaderboard.
 
 The game watches for the moments your face gives you away:
 
@@ -38,7 +40,7 @@ What it is **not**: a lie detector. The question the game asks is *"did you crac
 
 The design splits the SmartSpectra signals by speed:
 
-- **Fast signals become cracks.** Expression probabilities react in real time. A crack is how far your face moves away from *your own* baseline, calibrated during the first seconds of your turn, so a naturally smiley person isn't punished for their resting face. Talking detection separates "answering a question" from "holding still", so answering doesn't count as a crack.
+- **Fast signals become cracks.** Expression probabilities react in real time. A crack is how far your face moves away from *your own* baseline, calibrated during an 8-second settle before your clock starts, so a naturally smiley person isn't punished for their resting face. One laugh counts as one crack, however long it lasts. The hot seat is silent: talking detection arrives a second or more late, too late to excuse an answer, so the player doesn't answer at all. Talking only shows up as a "spoke" mark on the replay and never changes the score.
 - **Slow signals become pressure.** Pulse (a 12-second average) and breathing (a 30-second average) are too slow to react to a single joke, so they don't produce verdicts. They feed a **pressure meter** that builds tension across the round instead.
 - **Holding still is the rule.** SmartSpectra vitals need a stationary subject, and in Poker Face sitting still is part of the game anyway.
 
@@ -62,7 +64,7 @@ Most human-sensing apps point the camera at you to help you calm down. Poker Fac
 
 *Design intent; this section will be updated to match the final build.*
 
-- **Explicit opt-in per player.** Every player agrees on screen before their own turn. Nobody is analyzed just for being in the room.
+- **Explicit opt-in before playing.** Before the first round, a consent screen lists everyone's name and explains what the game reads; pressing the button means everyone listed agrees. Anyone who doesn't want to take part removes their name before the game starts. Nobody outside the list is analyzed.
 - **The camera runs only during your round,** with a visible indicator, and stops when the round ends.
 - **No video is recorded, stored or uploaded.** Only the list of crack events (a timestamp and type) is kept, in memory, to draw the replay. It is cleared when the session ends.
 - **Network:** SmartSpectra processes frames on-device. The SDK contacts the Presage backend to validate the API key, so it needs an internet connection. By default it also sends one aggregate diagnostic summary per session (SDK version, platform, frame-rate and quality counts). Per Presage's docs, that summary never contains video frames, measured values or user identifiers, and it can be turned off with `enableTelemetry: false`. Poker Face turns it off.
@@ -79,3 +81,4 @@ Most human-sensing apps point the camera at you to help you calm down. Poker Fac
 - **2026-11-09:** SDK research done. Blink, talking and 8-class expression scores arrive at frame cadence (about 30 Hz); the SDK tracks exactly one face, so only the hot-seat player can be in frame; telemetry confirmed and documented above. Still to verify in the spike: that face metrics are enabled for this API key, and the real event latency.
 - **2026-11-10:** Spike done: go. Face samples arrive in about 50 ms, and a deliberate crack shows on screen about 1-2 s after the cue. Cracks are measured as change from the player's own baseline, because the raw expression labels misread a resting face. Blinks and vitals are out as crack signals. Next: decide what a round looks like.
 - **2026-11-11:** Stack decided: an Electron desktop app (TypeScript, electron-vite, React) in one fullscreen window. It runs from source, and I'll try to package a Windows `.exe` in the first build step; if packaging isn't working by 2026-11-15, the app ships as source-only and the post will say so. First launch asks for the API key and the camera.
+- **2026-11-12:** Round design decided. A round is 60 seconds after an 8-second calibration, and the hot seat stays silent. One laugh is one crack. Fewest cracks wins, and a session is one lap through every player (one to six). A single consent screen covers everyone in the lobby. The game pauses if the face leaves the frame. Next: decide what the room sees during a round.

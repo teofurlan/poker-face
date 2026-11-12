@@ -7,7 +7,7 @@ A party game for the [DEV Presage SmartSpectra SDK Challenge](https://dev.to/cha
 ## Core idea
 
 - **The question is "did you crack?", not "are you lying?".** The user chose this framing from the start, and the research confirmed it (see "Why this framing").
-- **Rounds:** one player is in the hot seat. The others try to break their composure with awkward questions, jokes, bluffs or staring.
+- **Rounds:** one player is in the hot seat. The others try to break their composure with awkward questions, jokes, bluffs or staring. Round rules were decided on 2026-11-12 in [the round ticket](https://github.com/teofurlan/poker-face/issues/6).
 - **Cracks are detected live** from the fast SDK signals: a micro-smile or any expression change (`face.expression`), a nervous blink (blink detection), and talking (`face.talking`, to separate answering from holding still).
 - **Background tension builds through the round** from the slower signals: pulse (a 12 s average) and breathing (a 30 s average, from the upper chest waveform). They feed a "pressure" meter rather than instant verdicts.
 - **End-of-round replay:** a timeline with each crack marked. It is the shareable moment and the centerpiece of the demo video.
@@ -71,7 +71,7 @@ From the [SmartSpectra docs](https://smartspectra.presagetech.com/docs), read 20
 
 ## Consent and data (design intent)
 
-- Every player opts in on screen before their turn, and the camera runs only during their own round.
+- One consent screen in the lobby lists every player; pressing it means everyone listed agrees (decided 2026-11-12, [round ticket](https://github.com/teofurlan/poker-face/issues/6)). Anyone unwilling removes their name first. The camera runs only during each player's own round.
 - Nothing is recorded or uploaded. Only the timeline of crack events stays in memory, and it is cleared when the session ends.
 - The SDK network call is limited to API key authentication; disclose it and any SDK telemetry.
 
