@@ -16,12 +16,28 @@ export interface SdkOptions {
   enableTelemetry: false
 }
 
+export const EXPR_CLASSES = [
+  'ANGRY',
+  'CONTEMPT',
+  'DISGUST',
+  'FEAR',
+  'HAPPY',
+  'NEUTRAL',
+  'SAD',
+  'SURPRISE'
+] as const
+
 export interface FaceStatus {
   running: boolean
   faceDetected: boolean
   validation: string
+  validationCode: number
   lastFaceAt: number | null
   error: string | null
+  expressions?: Record<string, number>
+  pulse?: { value: number; confidence: number; stable: boolean }
+  breathing?: { value: number; confidence: number; stable: boolean }
+  talking?: boolean
 }
 
 export type StopResult = 'stopped' | 'forced' | 'idle'
@@ -83,6 +99,7 @@ export function createFaceSession(deps: Deps): {
       running: true,
       faceDetected: false,
       validation: 'Starting camera',
+      validationCode: -1,
       lastFaceAt: null,
       error: null
     }
@@ -96,11 +113,44 @@ export function createFaceSession(deps: Deps): {
       enableTelemetry: false
     })
     s.on('validationStatus', (code: number) => {
-      emit({ validation: describeValidation(code), ...(code === 1 ? { faceDetected: false } : {}) })
+      emit({
+        validationCode: code,
+        validation: describeValidation(code),
+        ...(code === 1 ? { faceDetected: false } : {})
+      })
     })
     s.on('metrics', (buf: Buffer) => {
-      const m = deps.decode(buf) as { face?: { expression?: unknown[] } }
-      if (m.face?.expression?.length) emit({ faceDetected: true, lastFaceAt: now() })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const m = deps.decode(buf) as any
+      const patch: Partial<FaceStatus> = {}
+      if (m?.face?.expression?.length) {
+        patch.faceDetected = true
+        patch.lastFaceAt = now()
+        const exprSample = m.face.expression[0]
+        if (exprSample?.scores) {
+          const scoresRecord: Record<string, number> = {}
+          for (const name of EXPR_CLASSES) {
+            const match = exprSample.scores.find(
+              (x: { type: number | string; confidence: number }) =>
+                EXPR_CLASSES[x.type as number] === name || x.type === name
+            )
+            scoresRecord[name] = match?.confidence ?? 0
+          }
+          patch.expressions = scoresRecord
+        }
+      }
+      if (m?.cardio?.pulseRate?.length) {
+        const p = m.cardio.pulseRate[0]
+        patch.pulse = { value: p.value, confidence: p.confidence, stable: Boolean(p.stable) }
+      }
+      if (m?.breathing?.rate?.length) {
+        const b = m.breathing.rate[0]
+        patch.breathing = { value: b.value, confidence: b.confidence, stable: Boolean(b.stable) }
+      }
+      if (m?.face?.talking?.length) {
+        patch.talking = Boolean(m.face.talking[0]?.detected)
+      }
+      emit(patch)
     })
     s.on('error', (code: number, message: string) => {
       emit({ error: `${message} (code ${code})` })

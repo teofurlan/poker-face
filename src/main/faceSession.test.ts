@@ -84,9 +84,45 @@ describe('face session', () => {
       running: true,
       faceDetected: true,
       validation: 'Face OK',
+      validationCode: 0,
       lastFaceAt: 1000,
-      error: null
+      error: null,
+      expressions: {
+        ANGRY: 0,
+        CONTEMPT: 0,
+        DISGUST: 0,
+        FEAR: 0,
+        HAPPY: 0,
+        NEUTRAL: 0,
+        SAD: 0,
+        SURPRISE: 0
+      }
     })
+  })
+
+  it('decodes pulse, breathing and talking when available in metrics', async () => {
+    const customPayload = {
+      face: {
+        expression: [{ scores: [{ type: 4, confidence: 65 }] }],
+        talking: [{ detected: true }]
+      },
+      cardio: {
+        pulseRate: [{ value: 72, confidence: 95, stable: 1 }]
+      },
+      breathing: {
+        rate: [{ value: 16, confidence: 88, stable: 1 }]
+      }
+    }
+    const { sdk, statuses, session, onStatus } = setup(customPayload)
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    sdk.emit('validationStatus', 0, 0, '')
+    sdk.emit('metrics', Buffer.alloc(0), 0)
+    const latest = statuses.at(-1) as Record<string, unknown>
+    expect(latest.pulse).toEqual({ value: 72, confidence: 95, stable: true })
+    expect(latest.breathing).toEqual({ value: 16, confidence: 88, stable: true })
+    expect(latest.talking).toBe(true)
+    const expr = latest.expressions as Record<string, number>
+    expect(expr.HAPPY).toBe(65)
   })
 
   it('reports no face when the SDK says so', async () => {

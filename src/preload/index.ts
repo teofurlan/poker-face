@@ -25,8 +25,13 @@ export interface FaceStatus {
   running: boolean
   faceDetected: boolean
   validation: string
+  validationCode: number
   lastFaceAt: number | null
   error: string | null
+  expressions?: Record<string, number>
+  pulse?: { value: number; confidence: number; stable: boolean }
+  breathing?: { value: number; confidence: number; stable: boolean }
+  talking?: boolean
 }
 
 export type PokerFaceApi = typeof api

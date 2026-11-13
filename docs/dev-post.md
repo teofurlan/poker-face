@@ -1,10 +1,10 @@
 ---
-title: "Poker Face: a party game where your face is the only tell (built in public)"
+title: 'Poker Face: a party game where your face is the only tell (built in public)'
 published: true
 tags: devchallenge, presagechallenge, gamedev, webdev
 ---
 
-*This is a submission for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04)*
+_This is a submission for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04)_
 
 > 🚧 **Built in public.** This post is updated as the project moves forward. The build log at the end shows what is done and what is still planned. Anything not marked as done is a plan, not a working feature yet.
 
@@ -24,15 +24,15 @@ The game watches for the moments your face gives you away:
 
 Each one is a **crack**, marked live on screen for the whole room to see. At the end of the round you get a **replay timeline** with every crack pinned to the moment it happened, so everyone can see exactly which joke broke you.
 
-What it is **not**: a lie detector. The question the game asks is *"did you crack?"*, never *"are you lying?"*. Physiological lie detection is not reliable, and the game never makes claims about truth, health or stress. It only reacts to what your face visibly lets slip.
+What it is **not**: a lie detector. The question the game asks is _"did you crack?"_, never _"are you lying?"_. Physiological lie detection is not reliable, and the game never makes claims about truth, health or stress. It only reacts to what your face visibly lets slip.
 
 ## Demo
 
-*Coming soon...*
+_Coming soon..._
 
 ## Code
 
-*Repository: [github.com/teofurlan/poker-face](https://github.com/teofurlan/poker-face)*
+_Repository: [github.com/teofurlan/poker-face](https://github.com/teofurlan/poker-face)_
 
 **Stack:** a Windows desktop app built with Electron, TypeScript, electron-vite and React, running the SmartSpectra Node SDK in the main process. One fullscreen window is the shared screen for the whole room (mirror it to a TV if you have one). You can run it from source (`npm install`, `npm run dev`). On first launch it asks for your Presage API key and lets you pick your camera from a list. A packaged Windows installer builds too; it is unsigned, so Windows warns before installing it.
 
@@ -40,7 +40,7 @@ What it is **not**: a lie detector. The question the game asks is *"did you crac
 
 The design splits the SmartSpectra signals by speed:
 
-- **Fast signals become cracks.** Expression probabilities react in real time. A crack is how far your face moves away from *your own* baseline, calibrated during an 8-second settle before your clock starts, so a naturally smiley person isn't punished for their resting face. One laugh counts as one crack, however long it lasts. The hot seat is silent: talking detection arrives a second or more late, too late to excuse an answer, so the player doesn't answer at all. Talking only shows up as a "spoke" mark on the replay and never changes the score.
+- **Fast signals become cracks.** Expression probabilities react in real time. A crack is how far your face moves away from _your own_ baseline, calibrated during an 8-second settle before your clock starts, so a naturally smiley person isn't punished for their resting face. One laugh counts as one crack, however long it lasts. The hot seat is silent: talking detection arrives a second or more late, too late to excuse an answer, so the player doesn't answer at all. Talking only shows up as a "spoke" mark on the replay and never changes the score.
 - **Slow signals become pressure.** Pulse (a 12-second average) and breathing (a 30-second average) are too slow to react to a single joke, so they don't produce verdicts. They feed a **pressure meter** that builds tension across the round instead.
 - **Holding still is the rule.** SmartSpectra vitals need a stationary subject, and in Poker Face sitting still is part of the game anyway.
 
@@ -48,7 +48,7 @@ The design splits the SmartSpectra signals by speed:
 
 - Face samples reach the app about **50 ms** after the frame is captured (under 75 ms for 95% of them), at about 28 samples per second.
 - A deliberate smile or look of surprise registers as a crack **about 1-2 seconds after the on-screen cue**, including the player's own reaction time.
-- The expression *labels* are not usable on their own: my resting poker face scored as "sad" most of the time. So Poker Face never asks "is this a smile?". It only asks "how much did your face change from your own baseline?" That change stayed under the threshold almost always while I held still.
+- The expression _labels_ are not usable on their own: my resting poker face scored as "sad" most of the time. So Poker Face never asks "is this a smile?". It only asks "how much did your face change from your own baseline?" That change stayed under the threshold almost always while I held still.
 - Blink detection proved unreliable, so blinks are not cracks.
 - Pulse and breathing need your chest in frame, take about 20 seconds to produce a first reading, and swing a lot. They will never count as cracks.
 
@@ -62,7 +62,7 @@ Most human-sensing apps point the camera at you to help you calm down. Poker Fac
 
 ## Consent and Data Handling
 
-*Design intent; this section will be updated to match the final build.*
+_Design intent; this section will be updated to match the final build._
 
 - **Explicit opt-in before playing.** Before the first round, a consent screen lists everyone's name and explains what the game reads; pressing the button means everyone listed agrees. Anyone who doesn't want to take part removes their name before the game starts. Nobody outside the list is analyzed.
 - **The camera runs only during your round,** with a visible indicator, and stops when the round ends.
@@ -73,7 +73,7 @@ Most human-sensing apps point the camera at you to help you calm down. Poker Fac
 
 ## Agent Session
 
-*Coming soon: curated slices of the coding-agent session used to plan and build the game.*
+_Coming soon: curated slices of the coding-agent session used to plan and build the game._
 
 ## Build log
 
@@ -82,4 +82,5 @@ Most human-sensing apps point the camera at you to help you calm down. Poker Fac
 - **2026-11-10:** Spike done: go. Face samples arrive in about 50 ms, and a deliberate crack shows on screen about 1-2 s after the cue. Cracks are measured as change from the player's own baseline, because the raw expression labels misread a resting face. Blinks and vitals are out as crack signals. Next: decide what a round looks like.
 - **2026-11-11:** Stack decided: an Electron desktop app (TypeScript, electron-vite, React) in one fullscreen window. It runs from source, and I'll try to package a Windows `.exe` in the first build step; if packaging isn't working by 2026-11-15, the app ships as source-only and the post will say so. First launch asks for the API key and the camera.
 - **2026-11-12:** Round design decided. A round is 60 seconds after an 8-second calibration, and the hot seat stays silent. One laugh is one crack. Fewest cracks wins, and a session is one lap through every player (one to six). A single consent screen covers everyone in the lobby. The game pauses if the face leaves the frame. Next: decide what the room sees during a round.
-- **2026-11-13:** First build step done: the app skeleton. It asks for the key, lets you pick a camera and shows live whether the SDK sees a face. The Windows installer builds, but the SDK loads its native libraries only from real files, so the app ships unpacked (no `app.asar`). If stopping the SDK ever hangs, the app quits, so a session that uses credits never keeps running. Next: calibration and the round.
+- **2026-11-13:** First build step done: the app skeleton. It asks for the key, lets you pick a camera and shows live whether the SDK sees a face. The Windows installer builds, but the SDK loads its native libraries only from real files, so the app ships unpacked (no `app.asar`). If stopping the SDK ever hangs, the app quits, so a session that uses credits never keeps running.
+- **2026-11-13:** Room display decided (#7). The room sees both live cracks and a background pressure meter fed by slow vitals (pulse and breathing). The pressure meter builds tension for the room but has no score effect; cracks alone decide the winner. Next: ticket #8 (game name) or the core loop (calibration and round).

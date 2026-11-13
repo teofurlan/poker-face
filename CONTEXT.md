@@ -38,3 +38,7 @@ The Player's own resting face, learned during calibration, that every crack is m
 **Crack**:
 One moment where the Player's face departs clearly from their baseline; a sustained laugh is a single crack.
 _Avoid_: tell, lie, slip, fail
+
+**Pressure meter**:
+A live display of ambient physical tension during the round, built from slow signals (pulse and breathing). Purely theatrical for the room; has no effect on score.
+_Avoid_: lie detector, stress meter, truth meter
