@@ -1,7 +1,13 @@
 import { app, ipcMain, safeStorage, type BrowserWindow } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { SmartSpectraSDK, decodeMetrics, faceMetrics } from '@smartspectra/node-sdk'
+import {
+  SmartSpectraSDK,
+  decodeMetrics,
+  faceMetrics,
+  cardioMetrics,
+  breathingMetrics
+} from '@smartspectra/node-sdk'
 import { createKeyStore } from './apiKey'
 import { pickRememberedCamera, type CameraInfo } from './camera'
 import { createFaceSession, type SdkLike } from './faceSession'
@@ -46,7 +52,7 @@ function listCameras(): CameraInfo[] {
 export const faceSession = createFaceSession({
   createSdk: (options) => new SmartSpectraSDK(options) as unknown as SdkLike,
   decode: decodeMetrics,
-  faceMetrics
+  faceMetrics: [...faceMetrics, ...cardioMetrics, ...breathingMetrics]
 })
 
 export function registerIpc(getWindow: () => BrowserWindow | null): void {
