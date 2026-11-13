@@ -34,7 +34,7 @@ What it is **not**: a lie detector. The question the game asks is *"did you crac
 
 *Repository: [github.com/teofurlan/poker-face](https://github.com/teofurlan/poker-face)*
 
-**Planned stack:** a Windows desktop app built with Electron, TypeScript, electron-vite and React, running the SmartSpectra Node SDK in the same app. One fullscreen window is the shared screen for the whole room (mirror it to a TV if you have one). You can run it from source (`npm install`, `npm start`), and I'm aiming for a packaged Windows `.exe` as well. On first launch it asks for your Presage API key and lets you pick your camera from a list.
+**Stack:** a Windows desktop app built with Electron, TypeScript, electron-vite and React, running the SmartSpectra Node SDK in the main process. One fullscreen window is the shared screen for the whole room (mirror it to a TV if you have one). You can run it from source (`npm install`, `npm run dev`). On first launch it asks for your Presage API key and lets you pick your camera from a list. A packaged Windows installer builds too; it is unsigned, so Windows warns before installing it.
 
 ## How It Responds to Human Signals
 
@@ -82,3 +82,4 @@ Most human-sensing apps point the camera at you to help you calm down. Poker Fac
 - **2026-11-10:** Spike done: go. Face samples arrive in about 50 ms, and a deliberate crack shows on screen about 1-2 s after the cue. Cracks are measured as change from the player's own baseline, because the raw expression labels misread a resting face. Blinks and vitals are out as crack signals. Next: decide what a round looks like.
 - **2026-11-11:** Stack decided: an Electron desktop app (TypeScript, electron-vite, React) in one fullscreen window. It runs from source, and I'll try to package a Windows `.exe` in the first build step; if packaging isn't working by 2026-11-15, the app ships as source-only and the post will say so. First launch asks for the API key and the camera.
 - **2026-11-12:** Round design decided. A round is 60 seconds after an 8-second calibration, and the hot seat stays silent. One laugh is one crack. Fewest cracks wins, and a session is one lap through every player (one to six). A single consent screen covers everyone in the lobby. The game pauses if the face leaves the frame. Next: decide what the room sees during a round.
+- **2026-11-13:** First build step done: the app skeleton. It asks for the key, lets you pick a camera and shows live whether the SDK sees a face. The Windows installer builds, but the SDK loads its native libraries only from real files, so the app ships unpacked (no `app.asar`). If stopping the SDK ever hangs, the app quits, so a session that uses credits never keeps running. Next: calibration and the round.

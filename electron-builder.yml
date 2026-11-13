@@ -1,0 +1,19 @@
+appId: com.teofurlan.pokerface
+productName: Poker Face
+directories:
+  buildResources: build
+files:
+  - 'out/**'
+  - 'resources/**'
+  - 'package.json'
+  - '!node_modules/@smartspectra/node-sdk-{darwin-arm64,linux-arm64,linux-x64}/**'
+  - '!node_modules/koffi/build/koffi/!(win32_x64)/**'
+win:
+  executableName: poker-face
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+asar: false
+npmRebuild: false
