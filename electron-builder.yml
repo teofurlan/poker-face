@@ -9,10 +9,8 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-asarUnpack:
-  - resources/**
-  - node_modules/@smartspectra/**
-  - node_modules/koffi/**
+  - '!node_modules/@smartspectra/node-sdk-{darwin-arm64,linux-arm64,linux-x64}/**'
+  - '!node_modules/koffi/build/koffi/!(win32_x64)/**'
 win:
   executableName: poker-face
 nsis:
@@ -20,4 +18,5 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+asar: false
 npmRebuild: false
