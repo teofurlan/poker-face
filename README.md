@@ -2,7 +2,7 @@
 
 A party game for the [DEV Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04). One player sits in front of the camera and keeps a straight face while everyone else tries to crack them. The game scores what the body lets slip and never claims to know whether someone is lying.
 
-**Status (2026-11-06):** the idea and plan are agreed; no code exists yet. The next step is the technical spike (Plan, step 1).
+**Status (2026-11-13):** the app skeleton runs: a fullscreen Electron app that asks for the API key, lets you pick a camera and shows live whether the SDK sees a face ([build ticket](https://github.com/teofurlan/poker-face/issues/9)). The game itself (calibration, rounds, cracks) is the next step.
 
 ## Core idea
 
@@ -54,6 +54,24 @@ From the [SmartSpectra docs](https://smartspectra.presagetech.com/docs), read 20
 - **Platforms:** Node.js/Electron (win32-x64 supported), C++ (Windows is experimental), Android and Swift.
 - **Processing and network:** metrics are computed on-device. The SDK calls the Presage backend only to authenticate the API key, so a network connection is required.
 - **Probably one subject at a time.** This is unverified; checking it is part of the spike.
+
+## Run it from source
+
+You need Windows 10 or 11 (x64), Node.js 20 or later, a webcam, a network connection, and a free Presage API key from [physiology.presagetech.com](https://physiology.presagetech.com).
+
+```sh
+git clone https://github.com/teofurlan/poker-face.git
+cd poker-face
+npm install
+npm run dev
+```
+
+- On first launch the app asks for your API key. It is saved only on your computer, encrypted with Electron `safeStorage`. If the `PRESAGE_API_KEY` environment variable is set, the app uses it and skips that screen.
+- Then pick your camera. The app remembers your choice.
+- The SDK runs only while the live screen is open, and that time uses your Presage credits. Press **Stop** when you are done.
+- If `npm run dev` fails with `Error: Electron uninstall`, npm skipped the Electron download. Run `node node_modules/electron/install.js`, then try again.
+
+Other commands: `npm test` runs the unit tests, `npm start` previews the production build, and `npm run build:win` builds an unsigned Windows installer in `dist/`.
 
 ## Plan
 
