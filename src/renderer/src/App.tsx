@@ -36,18 +36,27 @@ function KeyScreen({ onSaved }: { onSaved: () => void }): React.JSX.Element {
 function CameraScreen({ onChosen }: { onChosen: (camera: Camera) => void }): React.JSX.Element {
   const [cameras, setCameras] = useState<Camera[] | null>(null)
   const [selected, setSelected] = useState<string>('')
+  const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    window.api.listCameras().then(({ cameras, selectedId }) => {
-      setCameras(cameras)
-      setSelected(selectedId ?? cameras[0]?.id ?? '')
-    })
+    window.api
+      .listCameras()
+      .then((result) => {
+        const { cameras, selectedId } = result
+        setError((result as { error?: string }).error ?? null)
+        setCameras(cameras)
+        setSelected(selectedId ?? cameras[0]?.id ?? '')
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : String(err))
+        setCameras([])
+      })
   }, [])
   if (!cameras) return <div className="panel">Looking for cameras…</div>
   if (!cameras.length)
     return (
       <div className="panel">
         <h1>No camera found</h1>
-        <p className="error">Connect a camera and restart Poker Face.</p>
+        <p className="error">{error ?? 'Connect a camera and restart Poker Face.'}</p>
       </div>
     )
   const chosen = cameras.find((c) => c.id === selected)

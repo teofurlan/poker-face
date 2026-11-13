@@ -58,18 +58,26 @@ export function describeValidation(code: number): string {
 }
 
 export function createFaceSession(deps: Deps): {
-  start: (args: { apiKey: string; cameraId: string }, onStatus: (s: FaceStatus) => void) => void
+  start: (
+    args: { apiKey: string; cameraId: string },
+    onStatus: (s: FaceStatus) => void
+  ) => Promise<void>
   stop: () => Promise<StopResult>
   isRunning: () => boolean
 } {
   const now = deps.now ?? Date.now
   const stopTimeoutMs = deps.stopTimeoutMs ?? 3000
+  // The SDK stays tracked until stopAsync + destroy have really finished, never earlier.
   let sdk: SdkLike | null = null
+  let stopping: Promise<StopResult> | null = null
+  let forced = false
 
-  function start(
+  async function start(
     args: { apiKey: string; cameraId: string },
     onStatus: (s: FaceStatus) => void
-  ): void {
+  ): Promise<void> {
+    if (stopping) await stopping
+    if (forced) throw new Error('The previous camera session could not be stopped; app is closing.')
     if (sdk) throw new Error('A face session is already running.')
     const status: FaceStatus = {
       running: true,
@@ -103,24 +111,41 @@ export function createFaceSession(deps: Deps): {
     emit({})
   }
 
-  async function stop(): Promise<StopResult> {
+  function stop(): Promise<StopResult> {
+    if (stopping) return stopping
     const s = sdk
-    if (!s) return 'idle'
-    sdk = null
+    if (!s) return Promise.resolve('idle')
     let timer: ReturnType<typeof setTimeout> | undefined
     const timeout = new Promise<'forced'>((resolve) => {
       timer = setTimeout(() => resolve('forced'), stopTimeoutMs)
     })
-    const done = (async (): Promise<'stopped'> => {
-      await s.stopAsync()
-      await s.destroy()
-      return 'stopped'
+    const done = (async (): Promise<StopResult> => {
+      let ok = true
+      try {
+        await s.stopAsync()
+      } catch {
+        ok = false
+      }
+      try {
+        await s.destroy()
+      } catch {
+        ok = false
+      }
+      return ok ? 'stopped' : 'forced'
     })()
-    try {
-      return await Promise.race([done, timeout])
-    } finally {
-      clearTimeout(timer)
-    }
+    const run = (async (): Promise<StopResult> => {
+      try {
+        const result = await Promise.race([done, timeout])
+        if (result === 'stopped') sdk = null
+        else forced = true
+        return result
+      } finally {
+        clearTimeout(timer)
+        stopping = null
+      }
+    })()
+    stopping = run
+    return run
   }
 
   return { start, stop, isRunning: () => sdk !== null }

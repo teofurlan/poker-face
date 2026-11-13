@@ -54,18 +54,29 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle('key:save', (_e, key: string) => keyStore.save(String(key ?? '')))
 
   ipcMain.handle('cameras:list', () => {
-    const cameras = listCameras()
-    return { cameras, selectedId: pickRememberedCamera(cameras, rememberedCamera())?.id ?? null }
+    try {
+      const cameras = listCameras()
+      return {
+        cameras,
+        selectedId: pickRememberedCamera(cameras, rememberedCamera())?.id ?? null
+      }
+    } catch (err) {
+      return {
+        cameras: [] as CameraInfo[],
+        selectedId: null,
+        error: err instanceof Error ? err.message : String(err)
+      }
+    }
   })
   ipcMain.handle('camera:choose', (_e, camera: CameraInfo) => {
     writeFile(cameraFile, JSON.stringify({ id: camera.id, name: camera.name }))
   })
 
-  ipcMain.handle('face:start', (_e, cameraId: string) => {
+  ipcMain.handle('face:start', async (_e, cameraId: string) => {
     const { key } = keyStore.resolve()
     if (!key) return { ok: false, error: 'No API key yet.' }
     try {
-      faceSession.start({ apiKey: key, cameraId }, (status) => {
+      await faceSession.start({ apiKey: key, cameraId }, (status) => {
         getWindow()?.webContents.send('face:status', status)
       })
       return { ok: true }
@@ -73,5 +84,10 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
   })
-  ipcMain.handle('face:stop', () => faceSession.stop())
+  ipcMain.handle('face:stop', async () => {
+    const result = await faceSession.stop()
+    // A session that would not stop may still be billing: only ending the process guarantees it ends.
+    if (result === 'forced') app.exit(3)
+    return result
+  })
 }

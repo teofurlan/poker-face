@@ -8,6 +8,10 @@ class FakeSdk extends EventEmitter implements SdkLike {
   stopCalls = 0
   destroyCalls = 0
   hangStop = false
+  rejectStop = false
+  rejectDestroy = false
+  releaseStop: (() => void) | null = null
+  holdStop = false
   useCamera(selection: unknown): void {
     this.camera = selection
   }
@@ -16,29 +20,39 @@ class FakeSdk extends EventEmitter implements SdkLike {
   }
   stopAsync(): Promise<void> {
     this.stopCalls += 1
+    if (this.rejectStop) return Promise.reject(new Error('stop failed'))
+    if (this.holdStop) return new Promise((resolve) => (this.releaseStop = resolve))
     return this.hangStop ? new Promise(() => {}) : Promise.resolve()
   }
   async destroy(): Promise<void> {
     this.destroyCalls += 1
+    if (this.rejectDestroy) throw new Error('destroy failed')
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
   const sdk = new FakeSdk()
+  const created: FakeSdk[] = []
   const options: unknown[] = []
   const statuses: unknown[] = []
   const session = createFaceSession({
     createSdk: (opts) => {
       options.push(opts)
-      return sdk
+      if (created.length === 0) {
+        created.push(sdk)
+        return sdk
+      }
+      const next = new FakeSdk()
+      created.push(next)
+      return next
     },
     decode: () => decoded,
     faceMetrics: [42],
     stopTimeoutMs: 50,
     now: () => 1000
   })
-  return { sdk, options, statuses, session, onStatus: (s: unknown) => statuses.push(s) }
+  return { sdk, created, options, statuses, session, onStatus: (s: unknown) => statuses.push(s) }
 }
 
 describe('describeValidation', () => {
@@ -53,17 +67,17 @@ describe('describeValidation', () => {
 })
 
 describe('face session', () => {
-  it('requests face metrics only, telemetry off, on the chosen camera', () => {
+  it('requests face metrics only, telemetry off, on the chosen camera', async () => {
     const { sdk, options, session, onStatus } = setup()
-    session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     expect(options).toEqual([{ apiKey: 'k', requestedMetrics: [42], enableTelemetry: false }])
     expect(sdk.camera).toEqual({ kind: 'byId', id: 'cam-1' })
     expect(sdk.started).toBe(true)
   })
 
-  it('reports a detected face when expression samples arrive', () => {
+  it('reports a detected face when expression samples arrive', async () => {
     const { sdk, statuses, session, onStatus } = setup()
-    session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     sdk.emit('validationStatus', 0, 0, '')
     sdk.emit('metrics', Buffer.alloc(0), 0)
     expect(statuses.at(-1)).toEqual({
@@ -75,23 +89,23 @@ describe('face session', () => {
     })
   })
 
-  it('reports no face when the SDK says so', () => {
+  it('reports no face when the SDK says so', async () => {
     const { sdk, statuses, session, onStatus } = setup()
-    session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     sdk.emit('validationStatus', 1, 0, '')
     expect(statuses.at(-1)).toMatchObject({ faceDetected: false, validation: 'No face found' })
   })
 
-  it('surfaces SDK errors', () => {
+  it('surfaces SDK errors', async () => {
     const { sdk, statuses, session, onStatus } = setup()
-    session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     sdk.emit('error', 7, 'camera busy', false)
     expect(statuses.at(-1)).toMatchObject({ error: 'camera busy (code 7)' })
   })
 
   it('stops and destroys the SDK', async () => {
     const { sdk, session, onStatus } = setup()
-    session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     await expect(session.stop()).resolves.toBe('stopped')
     expect([sdk.stopCalls, sdk.destroyCalls]).toEqual([1, 1])
     await expect(session.stop()).resolves.toBe('idle')
@@ -100,8 +114,80 @@ describe('face session', () => {
   it('gives up after the timeout when stop hangs, so the caller can force quit', async () => {
     vi.useRealTimers()
     const { sdk, session, onStatus } = setup()
-    session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     sdk.hangStop = true
     await expect(session.stop()).resolves.toBe('forced')
+  })
+
+  it('keeps tracking the session while a stop hangs, and forces after the timeout', async () => {
+    const { sdk, session, onStatus } = setup()
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    sdk.hangStop = true
+    await expect(session.stop()).resolves.toBe('forced')
+    expect(session.isRunning()).toBe(true)
+  })
+
+  it('stays running while stop is pending and is idle only after teardown completes', async () => {
+    const { sdk, session, onStatus } = setup()
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    sdk.holdStop = true
+    const pending = session.stop()
+    expect(session.isRunning()).toBe(true)
+    await vi.waitFor(() => expect(sdk.releaseStop).not.toBeNull())
+    sdk.releaseStop?.()
+    await expect(pending).resolves.toBe('stopped')
+    expect(session.isRunning()).toBe(false)
+  })
+
+  it('still destroys and resolves forced when stopAsync rejects', async () => {
+    const { sdk, session, onStatus } = setup()
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    sdk.rejectStop = true
+    await expect(session.stop()).resolves.toBe('forced')
+    expect(sdk.destroyCalls).toBe(1)
+  })
+
+  it('resolves forced (never rejects) when destroy rejects', async () => {
+    const { sdk, session, onStatus } = setup()
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    sdk.rejectDestroy = true
+    await expect(session.stop()).resolves.toBe('forced')
+  })
+
+  it('start waits for a pending stop before creating a new SDK', async () => {
+    const { sdk, created, session, onStatus } = setup()
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    sdk.holdStop = true
+    const stopping = session.stop()
+    const restarting = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await new Promise((r) => setTimeout(r, 10))
+    expect(created).toHaveLength(1)
+    await vi.waitFor(() => expect(sdk.releaseStop).not.toBeNull())
+    sdk.releaseStop?.()
+    await stopping
+    await restarting
+    expect(created).toHaveLength(2)
+    expect(created[1].started).toBe(true)
+    expect(session.isRunning()).toBe(true)
+  })
+
+  it('does not start a new SDK when the pending stop was forced', async () => {
+    const { sdk, created, session, onStatus } = setup()
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    sdk.hangStop = true
+    const stopping = session.stop()
+    const restarting = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await expect(stopping).resolves.toBe('forced')
+    await expect(restarting).rejects.toThrow()
+    await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toThrow()
+    expect(created).toHaveLength(1)
+  })
+
+  it('rejects a second start while running', async () => {
+    const { session, onStatus } = setup()
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toThrow(
+      /already running/
+    )
   })
 })

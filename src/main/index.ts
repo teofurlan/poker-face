@@ -19,7 +19,7 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -54,10 +54,13 @@ app.on('before-quit', (event) => {
   if (quitting || !faceSession.isRunning()) return
   event.preventDefault()
   quitting = true
-  faceSession.stop().then((result) => {
-    if (result === 'forced') app.exit(3)
-    else app.quit()
-  })
+  faceSession
+    .stop()
+    .then((result) => {
+      if (result === 'forced') app.exit(3)
+      else app.quit()
+    })
+    .catch(() => app.exit(3))
 })
 
 app.on('window-all-closed', () => {
