@@ -42,7 +42,7 @@ function CameraScreen({ onChosen }: { onChosen: (camera: Camera) => void }): Rea
       .listCameras()
       .then((result) => {
         const { cameras, selectedId } = result
-        setError((result as { error?: string }).error ?? null)
+        setError(result.error ?? null)
         setCameras(cameras)
         setSelected(selectedId ?? cameras[0]?.id ?? '')
       })

@@ -7,6 +7,7 @@ const api = {
   listCameras: (): Promise<{
     cameras: { id: string; name: string }[]
     selectedId: string | null
+    error?: string
   }> => ipcRenderer.invoke('cameras:list'),
   chooseCamera: (camera: { id: string; name: string }): Promise<void> =>
     ipcRenderer.invoke('camera:choose', camera),
