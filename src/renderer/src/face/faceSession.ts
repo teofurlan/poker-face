@@ -1,11 +1,17 @@
-// One live SmartSpectra session in the main process: face metrics only, telemetry off.
-// Every session spends Presage credits, so stopping must never hang.
+// One live SmartSpectra session, run from the renderer so the same camera stream can be previewed.
+// The renderer owns the camera stream; the SDK's main-process side does the processing.
+// Telemetry is always off. Every session spends Presage credits, so stopping must never hang.
+import { describeValidation } from '../game/calibration'
+
+export interface StreamLike {
+  getTracks(): { stop: () => void }[]
+}
 
 export interface SdkLike {
-  useCamera(selection: unknown): void
-  start(): void
-  stopAsync(): Promise<void>
-  destroy(): Promise<void>
+  useMediaStream(stream: StreamLike): unknown
+  start(): Promise<void>
+  stop(): Promise<void>
+  destroy(): void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   on(event: string, listener: (...args: any[]) => void): unknown
 }
@@ -44,40 +50,18 @@ export type StopResult = 'stopped' | 'forced' | 'idle'
 
 interface Deps {
   createSdk: (options: SdkOptions) => SdkLike
-  decode: (buf: Buffer) => unknown
+  decode: (buf: Uint8Array) => unknown
+  acquireStream: (cameraId: string) => Promise<StreamLike>
   faceMetrics: readonly number[]
   stopTimeoutMs?: number
   now?: () => number
-}
-
-const VALIDATION: Record<number, string> = {
-  0: 'Face OK',
-  1: 'No face found',
-  2: 'Only one face in frame',
-  3: 'Center your face',
-  4: 'Move closer or further',
-  5: 'Too dark',
-  6: 'Too bright',
-  7: 'Show your chest',
-  10: 'Camera adjusting',
-  11: 'Camera too slow',
-  12: 'Hold still',
-  13: 'Move back a little',
-  14: 'Come closer',
-  15: 'Move the camera down or sit lower',
-  16: 'Move the camera up or sit higher',
-  17: 'Look at the camera'
-}
-
-export function describeValidation(code: number): string {
-  return VALIDATION[code] ?? 'Adjusting'
 }
 
 export function createFaceSession(deps: Deps): {
   start: (
     args: { apiKey: string; cameraId: string },
     onStatus: (s: FaceStatus) => void
-  ) => Promise<void>
+  ) => Promise<StreamLike>
   stop: () => Promise<StopResult>
   isRunning: () => boolean
 } {
@@ -85,13 +69,14 @@ export function createFaceSession(deps: Deps): {
   const stopTimeoutMs = deps.stopTimeoutMs ?? 3000
   // The SDK stays tracked until stopAsync + destroy have really finished, never earlier.
   let sdk: SdkLike | null = null
+  let stream: StreamLike | null = null
   let stopping: Promise<StopResult> | null = null
   let forced = false
 
   async function start(
     args: { apiKey: string; cameraId: string },
     onStatus: (s: FaceStatus) => void
-  ): Promise<void> {
+  ): Promise<StreamLike> {
     if (stopping) await stopping
     if (forced) throw new Error('The previous camera session could not be stopped; app is closing.')
     if (sdk) throw new Error('A face session is already running.')
@@ -107,6 +92,7 @@ export function createFaceSession(deps: Deps): {
       Object.assign(status, patch)
       onStatus({ ...status })
     }
+    const camera = await deps.acquireStream(args.cameraId)
     const s = deps.createSdk({
       apiKey: args.apiKey,
       requestedMetrics: [...deps.faceMetrics],
@@ -119,7 +105,7 @@ export function createFaceSession(deps: Deps): {
         ...(code === 1 ? { faceDetected: false } : {})
       })
     })
-    s.on('metrics', (buf: Buffer) => {
+    s.on('metrics', (buf: Uint8Array) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const m = deps.decode(buf) as any
       const patch: Partial<FaceStatus> = {}
@@ -155,10 +141,17 @@ export function createFaceSession(deps: Deps): {
     s.on('error', (code: number, message: string) => {
       emit({ error: `${message} (code ${code})` })
     })
-    s.useCamera({ kind: 'byId', id: args.cameraId })
+    s.useMediaStream(camera)
     sdk = s
-    s.start()
+    stream = camera
     emit({})
+    try {
+      await s.start()
+    } catch (err) {
+      await stop()
+      throw err
+    }
+    return camera
   }
 
   function stop(): Promise<StopResult> {
@@ -172,15 +165,18 @@ export function createFaceSession(deps: Deps): {
     const done = (async (): Promise<StopResult> => {
       let ok = true
       try {
-        await s.stopAsync()
+        await s.stop()
       } catch {
         ok = false
       }
       try {
-        await s.destroy()
+        s.destroy()
       } catch {
         ok = false
       }
+      // The host owns the camera stream, so it releases it once the SDK has let go.
+      for (const track of stream?.getTracks() ?? []) track.stop()
+      stream = null
       return ok ? 'stopped' : 'forced'
     })()
     const run = (async (): Promise<StopResult> => {

@@ -1,9 +1,16 @@
 import { EventEmitter } from 'node:events'
 import { describe, expect, it, vi } from 'vitest'
-import { createFaceSession, describeValidation, type SdkLike } from './faceSession'
+import { createFaceSession, type SdkLike, type StreamLike } from './faceSession'
+
+class FakeStream implements StreamLike {
+  stopped = 0
+  getTracks(): { stop: () => void }[] {
+    return [{ stop: () => void (this.stopped += 1) }]
+  }
+}
 
 class FakeSdk extends EventEmitter implements SdkLike {
-  camera: unknown = null
+  stream: unknown = null
   started = false
   stopCalls = 0
   destroyCalls = 0
@@ -12,19 +19,20 @@ class FakeSdk extends EventEmitter implements SdkLike {
   rejectDestroy = false
   releaseStop: (() => void) | null = null
   holdStop = false
-  useCamera(selection: unknown): void {
-    this.camera = selection
+  useMediaStream(stream: StreamLike): this {
+    this.stream = stream
+    return this
   }
-  start(): void {
+  async start(): Promise<void> {
     this.started = true
   }
-  stopAsync(): Promise<void> {
+  stop(): Promise<void> {
     this.stopCalls += 1
     if (this.rejectStop) return Promise.reject(new Error('stop failed'))
     if (this.holdStop) return new Promise((resolve) => (this.releaseStop = resolve))
     return this.hangStop ? new Promise(() => {}) : Promise.resolve()
   }
-  async destroy(): Promise<void> {
+  destroy(): void {
     this.destroyCalls += 1
     if (this.rejectDestroy) throw new Error('destroy failed')
   }
@@ -33,6 +41,9 @@ class FakeSdk extends EventEmitter implements SdkLike {
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
   const sdk = new FakeSdk()
+  const streams: FakeStream[] = []
+  const requestedCameras: string[] = []
+  let failCamera: string | null = null
   const created: FakeSdk[] = []
   const options: unknown[] = []
   const statuses: unknown[] = []
@@ -48,38 +59,56 @@ function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
       return next
     },
     decode: () => decoded,
+    acquireStream: async (cameraId) => {
+      requestedCameras.push(cameraId)
+      if (failCamera) throw new Error(failCamera)
+      const stream = new FakeStream()
+      streams.push(stream)
+      return stream
+    },
     faceMetrics: [42],
     stopTimeoutMs: 50,
     now: () => 1000
   })
-  return { sdk, created, options, statuses, session, onStatus: (s: unknown) => statuses.push(s) }
+  return {
+    sdk,
+    created,
+    options,
+    statuses,
+    session,
+    streams,
+    requestedCameras,
+    failCameraWith: (message: string) => (failCamera = message),
+    onStatus: (s: unknown) => statuses.push(s)
+  }
 }
 
-describe('describeValidation', () => {
-  it('maps SDK codes to short instructions', () => {
-    expect(describeValidation(0)).toBe('Face OK')
-    expect(describeValidation(1)).toBe('No face found')
-    expect(describeValidation(2)).toBe('Only one face in frame')
-    expect(describeValidation(5)).toBe('Too dark')
-    expect(describeValidation(16)).toBe('Move the camera up or sit higher')
-    expect(describeValidation(99)).toBe('Adjusting')
-  })
-})
-
 describe('face session', () => {
-  it('requests face metrics only, telemetry off, on the chosen camera', async () => {
-    const { sdk, options, session, onStatus } = setup()
-    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+  it('feeds the chosen camera stream to the SDK with the requested metrics and telemetry off', async () => {
+    const { sdk, options, session, streams, requestedCameras, onStatus } = setup()
+    const stream = await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    expect(requestedCameras).toEqual(['cam-1'])
     expect(options).toEqual([{ apiKey: 'k', requestedMetrics: [42], enableTelemetry: false }])
-    expect(sdk.camera).toEqual({ kind: 'byId', id: 'cam-1' })
+    expect(sdk.stream).toBe(streams[0])
+    expect(stream).toBe(streams[0])
     expect(sdk.started).toBe(true)
+  })
+
+  it('creates no SDK and rejects when the camera cannot be opened', async () => {
+    const { created, session, failCameraWith, onStatus } = setup()
+    failCameraWith('Could not start video source')
+    await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toThrow(
+      'Could not start video source'
+    )
+    expect(created).toHaveLength(0)
+    expect(session.isRunning()).toBe(false)
   })
 
   it('reports a detected face when expression samples arrive', async () => {
     const { sdk, statuses, session, onStatus } = setup()
     await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     sdk.emit('validationStatus', 0, 0, '')
-    sdk.emit('metrics', Buffer.alloc(0), 0)
+    sdk.emit('metrics', new Uint8Array(0), 0)
     expect(statuses.at(-1)).toEqual({
       running: true,
       faceDetected: true,
@@ -116,7 +145,7 @@ describe('face session', () => {
     const { sdk, statuses, session, onStatus } = setup(customPayload)
     await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     sdk.emit('validationStatus', 0, 0, '')
-    sdk.emit('metrics', Buffer.alloc(0), 0)
+    sdk.emit('metrics', new Uint8Array(0), 0)
     const latest = statuses.at(-1) as Record<string, unknown>
     expect(latest.pulse).toEqual({ value: 72, confidence: 95, stable: true })
     expect(latest.breathing).toEqual({ value: 16, confidence: 88, stable: true })
@@ -139,11 +168,11 @@ describe('face session', () => {
     expect(statuses.at(-1)).toMatchObject({ error: 'camera busy (code 7)' })
   })
 
-  it('stops and destroys the SDK', async () => {
-    const { sdk, session, onStatus } = setup()
+  it('stops and destroys the SDK and releases the camera', async () => {
+    const { sdk, session, streams, onStatus } = setup()
     await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     await expect(session.stop()).resolves.toBe('stopped')
-    expect([sdk.stopCalls, sdk.destroyCalls]).toEqual([1, 1])
+    expect([sdk.stopCalls, sdk.destroyCalls, streams[0].stopped]).toEqual([1, 1, 1])
     await expect(session.stop()).resolves.toBe('idle')
   })
 
@@ -175,7 +204,7 @@ describe('face session', () => {
     expect(session.isRunning()).toBe(false)
   })
 
-  it('still destroys and resolves forced when stopAsync rejects', async () => {
+  it('still destroys and resolves forced when stop rejects', async () => {
     const { sdk, session, onStatus } = setup()
     await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
     sdk.rejectStop = true

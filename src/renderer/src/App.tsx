@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { FaceStatus } from '../../preload'
+import { face, listCameras } from './face/face'
+import type { FaceStatus } from './face/faceSession'
 import { CalibrationScreen, type CalibrationStatus } from './components/CalibrationScreen'
 import { ConsentScreen } from './components/ConsentScreen'
 import { LeaderboardScreen } from './components/LeaderboardScreen'
@@ -58,11 +59,9 @@ function CameraScreen({
   const [selected, setSelected] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    window.api
-      .listCameras()
-      .then((result) => {
-        const { cameras, selectedId } = result
-        setError(result.error ?? null)
+    listCameras()
+      .then(async (cameras) => {
+        const selectedId = await window.api.rememberedCamera(cameras)
         setCameras(cameras)
         setSelected(selectedId ?? cameras[0]?.id ?? '')
       })
@@ -122,20 +121,20 @@ function TestCameraScreen({
   const [status, setStatus] = useState<FaceStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    const off = window.api.onFaceStatus(setStatus)
-    window.api.startFace(camera.id).then((r) => {
+    const off = face.onStatus(setStatus)
+    face.start(camera.id).then((r) => {
       if (!r.ok) setError(r.error)
     })
     return () => {
       off()
-      window.api.stopFace()
+      face.stop()
     }
   }, [camera.id])
-  const face = status?.faceDetected
+  const faceSeen = status?.faceDetected
   return (
     <div className="panel">
       <p className="muted">{camera.name}</p>
-      <div className={`face ${face ? 'on' : 'off'}`}>{face ? 'FACE' : 'NO FACE'}</div>
+      <div className={`face ${faceSeen ? 'on' : 'off'}`}>{faceSeen ? 'FACE' : 'NO FACE'}</div>
       <p className="validation">{status?.validation ?? 'Starting camera'}</p>
       {(error ?? status?.error) && <p className="error">{error ?? status?.error}</p>}
       <button type="button" onClick={onBack}>
@@ -171,7 +170,7 @@ function GameScreen({
 
   // Subscribe to face:status events
   useEffect(() => {
-    const off = window.api.onFaceStatus((status: FaceStatus) => {
+    const off = face.onStatus((status: FaceStatus) => {
       const now = Date.now()
       statusReceiverRef.current?.({
         validationCode: status.validationCode,
@@ -197,16 +196,16 @@ function GameScreen({
 
     return () => {
       off()
-      window.api.stopFace()
+      face.stop()
     }
   }, [])
 
   const startCamera = async (): Promise<void> => {
-    await window.api.startFace(camera.id)
+    await face.start(camera.id)
   }
 
   const stopCamera = async (): Promise<void> => {
-    await window.api.stopFace()
+    await face.stop()
   }
 
   // Lobby Phase

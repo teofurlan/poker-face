@@ -2,7 +2,8 @@ import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { faceSession, registerIpc } from './ipc'
+import { bindSmartSpectraIpc } from '@smartspectra/node-sdk/main'
+import { registerIpc } from './ipc'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -22,6 +23,9 @@ function createWindow(): void {
       sandbox: true
     }
   })
+
+  // The SDK runs here; the renderer feeds it camera frames. The binding releases the SDK when the window closes.
+  bindSmartSpectraIpc(mainWindow)
 
   mainWindow.on('ready-to-show', () => mainWindow?.show())
   mainWindow.on('closed', () => (mainWindow = null))
@@ -46,21 +50,6 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
-})
-
-// Never leave a billed SDK session running: stop it before quitting, and force exit if it hangs.
-let quitting = false
-app.on('before-quit', (event) => {
-  if (quitting || !faceSession.isRunning()) return
-  event.preventDefault()
-  quitting = true
-  faceSession
-    .stop()
-    .then((result) => {
-      if (result === 'forced') app.exit(3)
-      else app.quit()
-    })
-    .catch(() => app.exit(3))
 })
 
 app.on('window-all-closed', () => {

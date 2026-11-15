@@ -1,37 +1,22 @@
 import { contextBridge, ipcRenderer } from 'electron'
+// Exposes the SDK's own bridge (window.__smartspectraBridge) for @smartspectra/node-sdk/renderer.
+import '@smartspectra/node-sdk/preload'
+
+export interface CameraInfo {
+  id: string
+  name: string
+}
 
 const api = {
   keyStatus: (): Promise<{ source: 'env' | 'stored' | null }> => ipcRenderer.invoke('key:status'),
   saveKey: (key: string): Promise<{ ok: true } | { ok: false; error: string }> =>
     ipcRenderer.invoke('key:save', key),
-  listCameras: (): Promise<{
-    cameras: { id: string; name: string }[]
-    selectedId: string | null
-    error?: string
-  }> => ipcRenderer.invoke('cameras:list'),
-  chooseCamera: (camera: { id: string; name: string }): Promise<void> =>
-    ipcRenderer.invoke('camera:choose', camera),
-  startFace: (cameraId: string): Promise<{ ok: true } | { ok: false; error: string }> =>
-    ipcRenderer.invoke('face:start', cameraId),
-  stopFace: (): Promise<'stopped' | 'forced' | 'idle'> => ipcRenderer.invoke('face:stop'),
-  onFaceStatus: (listener: (status: FaceStatus) => void): (() => void) => {
-    const handler = (_e: unknown, status: FaceStatus): void => listener(status)
-    ipcRenderer.on('face:status', handler)
-    return () => ipcRenderer.removeListener('face:status', handler)
-  }
-}
-
-export interface FaceStatus {
-  running: boolean
-  faceDetected: boolean
-  validation: string
-  validationCode: number
-  lastFaceAt: number | null
-  error: string | null
-  expressions?: Record<string, number>
-  pulse?: { value: number; confidence: number; stable: boolean }
-  breathing?: { value: number; confidence: number; stable: boolean }
-  talking?: boolean
+  // Read only when a camera session starts: the renderer SDK forwards it to the main process.
+  keyForSession: (): Promise<string | null> => ipcRenderer.invoke('key:forSession'),
+  rememberedCamera: (cameras: CameraInfo[]): Promise<string | null> =>
+    ipcRenderer.invoke('cameras:remembered', cameras),
+  chooseCamera: (camera: CameraInfo): Promise<void> => ipcRenderer.invoke('camera:choose', camera),
+  forceExit: (): Promise<void> => ipcRenderer.invoke('face:forceExit')
 }
 
 export type PokerFaceApi = typeof api

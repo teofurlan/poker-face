@@ -34,7 +34,7 @@ _Coming soon..._
 
 _Repository: [github.com/teofurlan/poker-face](https://github.com/teofurlan/poker-face)_
 
-**Stack:** a Windows desktop app built with Electron, TypeScript, electron-vite and React, running the SmartSpectra Node SDK in the main process. One fullscreen window is the shared screen for the whole room (mirror it to a TV if you have one). You can run it from source (`npm install`, `npm run dev`). On first launch it asks for your Presage API key and lets you pick your camera from a list. A packaged Windows installer builds too; it is unsigned, so Windows warns before installing it.
+**Stack:** a Windows desktop app built with Electron, TypeScript, electron-vite and React, running the SmartSpectra Node SDK in its Electron renderer mode: the window opens the camera, shows a small live preview and feeds the same frames to the SDK, which processes them in the main process. One fullscreen window is the shared screen for the whole room (mirror it to a TV if you have one). You can run it from source (`npm install`, `npm run dev`). On first launch it asks for your Presage API key and lets you pick your camera from a list. A packaged Windows installer builds too; it is unsigned, so Windows warns before installing it.
 
 ## How It Responds to Human Signals
 
