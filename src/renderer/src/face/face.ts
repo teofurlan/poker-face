@@ -43,28 +43,34 @@ const session = createFaceSession({
 let startChain: Promise<unknown> = Promise.resolve()
 let epoch = 0
 
-async function startOnce(cameraId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const myEpoch = epoch
-  const apiKey = await window.api.keyForSession()
-  if (myEpoch !== epoch) return { ok: false, error: 'Camera start was cancelled.' }
-  if (!apiKey) return { ok: false, error: 'No API key yet.' }
+async function startOnce(
+  cameraId: string,
+  myEpoch: number
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const cancelled = { ok: false, error: 'Camera start was cancelled.' } as const
+  if (myEpoch !== epoch) return cancelled
   try {
+    const apiKey = await window.api.keyForSession()
+    if (myEpoch !== epoch) return cancelled
+    if (!apiKey) return { ok: false, error: 'No API key yet.' }
     const stream = await session.start({ apiKey, cameraId }, (status) => {
       for (const listener of statusListeners) listener(status)
     })
-    if (myEpoch !== epoch) return { ok: false, error: 'Camera start was cancelled.' }
+    if (myEpoch !== epoch) return cancelled
     setStream(stream as MediaStream)
     return { ok: true }
   } catch (err) {
     // A start that failed and could not stop its session may still be billing.
-    if ((err as { forced?: boolean } | null)?.forced) await window.api.forceExit()
+    if ((err as { forced?: boolean } | null)?.forced) await window.api.forceExit().catch(() => {})
     return { ok: false, error: err instanceof Error ? err.message : String(err) }
   }
 }
 
 export const face = {
   start(cameraId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-    const run = startChain.then(() => startOnce(cameraId))
+    // Take the epoch now, not when the queued start runs, so a stop called right after cancels it.
+    const myEpoch = epoch
+    const run = startChain.then(() => startOnce(cameraId, myEpoch))
     startChain = run.catch(() => undefined)
     return run
   },

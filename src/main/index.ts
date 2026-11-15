@@ -24,9 +24,12 @@ export function isAppUrl(url: string): boolean {
     const parsed = new URL(url)
     const devUrl = process.env['ELECTRON_RENDERER_URL']
     if (is.dev && devUrl) return parsed.origin === new URL(devUrl).origin
-    return (
-      parsed.protocol === 'file:' && pathToFileURL(fileURLToPath(parsed)).href === rendererIndexUrl
-    )
+    if (parsed.protocol !== 'file:') return false
+    const href = pathToFileURL(fileURLToPath(parsed)).href
+    // Windows paths are case-insensitive and Chromium may report a different drive-letter case.
+    return process.platform === 'win32'
+      ? href.toLowerCase() === rendererIndexUrl.toLowerCase()
+      : href === rendererIndexUrl
   } catch {
     return false
   }
