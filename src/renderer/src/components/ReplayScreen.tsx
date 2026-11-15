@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { PlayerRoundResult } from '../game/sessionMachine'
+import { Bug } from './Chrome'
 
 interface ReplayScreenProps {
   result: PlayerRoundResult
@@ -31,7 +32,6 @@ export function ReplayScreen({
 
   return (
     <div className="panel replay-panel">
-      <p className="muted">Round Replay · Hot Seat: {result.playerName}</p>
       <h1>
         {result.voided
           ? 'Round Voided (Face Lost > 10s)'
@@ -39,6 +39,7 @@ export function ReplayScreen({
             ? 'Incredible! 0 Cracks!'
             : `${result.totalCracks} Crack${result.totalCracks > 1 ? 's' : ''}`}
       </h1>
+      <p className="replay-sub">Round Replay · Hot Seat: {result.playerName}</p>
 
       <div className="replay-stats">
         <div className="stat-box">
@@ -97,11 +98,22 @@ export function ReplayScreen({
         </div>
       </div>
 
+      <div className="timeline-key" aria-hidden="true">
+        <span>
+          <i className="k-crack" /> Crack
+        </span>
+        <span>
+          <i className="k-spoke" /> Spoke
+        </span>
+      </div>
+
       <div className="replay-actions">
         <button type="button" className="primary-btn" onClick={onNext}>
           {isLastPlayerInLap ? 'View Leaderboard' : 'Next Player'} ({countdown}s)
         </button>
       </div>
+
+      <Bug context={`Round replay · ${result.playerName}`} />
     </div>
   )
 }

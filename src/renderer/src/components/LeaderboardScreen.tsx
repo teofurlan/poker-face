@@ -1,4 +1,5 @@
 import type { PlayerRanking } from '../game/sessionMachine'
+import { Bug } from './Chrome'
 
 interface LeaderboardScreenProps {
   lap: number
@@ -16,18 +17,10 @@ export function LeaderboardScreen({
   const winner = rankings[0]
 
   return (
-    <div className="panel leaderboard-panel">
-      <p className="muted">Lap {lap} Complete</p>
-      <h1>Session Leaderboard</h1>
-
-      {winner && !winner.voided && (
-        <div className="winner-spotlight">
-          <span className="trophy-icon">🏆</span>
-          <span className="winner-text">
-            Winner: <strong>{winner.playerName}</strong> ({winner.totalCracks} cracks)
-          </span>
-        </div>
-      )}
+    <div className={`panel leaderboard-panel ${rankings.length > 4 ? 'dense' : ''}`}>
+      <h1>
+        Final <em>card</em>
+      </h1>
 
       <div className="leaderboard-table" role="table" aria-label="Player rankings">
         <div className="leaderboard-header" role="row">
@@ -43,7 +36,7 @@ export function LeaderboardScreen({
             className={`leaderboard-row ${r.rank === 1 ? 'rank-1' : ''}`}
             role="row"
           >
-            <span className="col-rank">#{r.rank}</span>
+            <span className="col-rank">{r.rank}</span>
             <span className="col-name">{r.playerName}</span>
             <span className="col-cracks">{r.voided ? 'VOID' : r.totalCracks}</span>
             <span className="col-time">
@@ -58,6 +51,13 @@ export function LeaderboardScreen({
       </div>
 
       <div className="leaderboard-actions">
+        {winner && !winner.voided && (
+          <p className="winner-spotlight">
+            <span className="winner-text">
+              Winner: <strong>{winner.playerName}</strong> ({winner.totalCracks} cracks)
+            </span>
+          </p>
+        )}
         <button type="button" className="primary-btn" onClick={onRematch}>
           Play Rematch (Lap {lap + 1})
         </button>
@@ -65,6 +65,10 @@ export function LeaderboardScreen({
           New Session
         </button>
       </div>
+
+      <Bug
+        context={`Lap ${lap} complete · ${rankings.length} player${rankings.length === 1 ? '' : 's'}`}
+      />
     </div>
   )
 }

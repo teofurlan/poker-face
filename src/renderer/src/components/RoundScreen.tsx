@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createCrackDetector, type ExpressionScores } from '../game/crackDetector'
 import { createPressureMeter, type VitalSample } from '../game/pressureMeter'
 import type { PlayerRoundResult } from '../game/sessionMachine'
+import { Bug, TrendMark } from './Chrome'
 
 interface RoundScreenProps {
   playerName: string
@@ -143,84 +144,142 @@ export function RoundScreen({
     }
   }, [baseline, onRoundFinished, registerRoundEvents])
 
-  return (
-    <div className={`panel round-panel ${isCracking ? 'cracking-active' : ''}`}>
-      <div className="round-header">
-        <span className="hot-seat-player">Hot Seat: {playerName}</span>
-        <span className="round-timer">{secondsLeft}s</span>
-      </div>
+  const clock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`
+  const SEGMENTS = 30
+  const litSegments = Math.round((Math.min(100, Math.max(0, pressureScore)) / 100) * SEGMENTS)
+  const crackHit = cracksCount > 0
 
-      {isVoided && (
-        <div className="void-banner" role="alert">
-          <h2>Round Voided</h2>
-          <p>Face lost for more than 10 seconds.</p>
-          <button
-            type="button"
-            className="primary-btn"
-            onClick={() => {
-              onRoundFinished({
-                totalCracks: detectorRef.current.getState().totalCracks,
-                firstCrackMs: detectorRef.current.getState().firstCrackMs,
-                cracks: detectorRef.current.getState().cracks,
-                spokeEvents: [...spokeEventsRef.current],
-                faceLossTotalMs: faceLossMsRef.current,
-                voided: true
-              })
-            }}
-          >
-            Continue (Voided)
+  return (
+    <div className="panel round-panel">
+      <div className="round-top">
+        <div className="round-player">
+          <span className="round-tag" aria-hidden="true" />
+          <div>
+            <small>In the hot seat</small>
+            <span className="round-name">{playerName}</span>
+          </div>
+        </div>
+        <div className="round-timer" aria-label={`${secondsLeft} seconds left`}>
+          {clock}
+        </div>
+        <div className="round-side">
+          <button type="button" className="abort-btn" onClick={onAbort}>
+            Abort Round
           </button>
         </div>
-      )}
-
-      {isFaceLost && !isVoided && (
-        <div className="paused-banner" role="alert">
-          <h2>Clock Paused</h2>
-          <p>Move back into frame!</p>
-        </div>
-      )}
-
-      <div className="meters-grid">
-        {/* Cracks Meter */}
-        <div className={`meter-card cracks-card ${isCracking ? 'alert' : ''}`}>
-          <div className="meter-title">CRACKS</div>
-          <div className="cracks-display">{cracksCount}</div>
-          <div className="variation-bar-container">
-            <div
-              className={`variation-bar-fill ${currentVariation >= 40 ? 'danger' : ''}`}
-              style={{ width: `${Math.min(100, currentVariation)}%` }}
-            />
-            <div className="variation-threshold" title="Crack threshold (40)" />
-          </div>
-          <div className="variation-label">Variation: {currentVariation} / 100</div>
-        </div>
-
-        {/* Room Pressure Meter */}
-        <div className="meter-card pressure-card">
-          <div className="meter-title">
-            ROOM PRESSURE{' '}
-            {pressureTrend === 'rising' ? '▲' : pressureTrend === 'dropping' ? '▼' : '—'}
-          </div>
-          <div className="pressure-display">{pressureScore}%</div>
-          <div className="pressure-bar-container">
-            <div className="pressure-bar-fill" style={{ width: `${pressureScore}%` }} />
-          </div>
-          <div className="vitals-stats">
-            <span>Pulse: {pulseBpm ? `${pulseBpm} BPM` : 'reading...'}</span>
-            <span>Breathing: {breathingRate ? `${breathingRate}/min` : 'reading...'}</span>
-            <span className="meter-status">[{pressureStatus}]</span>
-          </div>
-        </div>
       </div>
 
-      <div className="round-footer">
-        <p className="muted entertainment-disclaimer">
-          For entertainment only. Not a medical device or lie detector.
-        </p>
-        <button type="button" className="abort-btn" onClick={onAbort}>
-          Abort Round
-        </button>
+      <div className="round-stage">
+        {crackHit && <div key={`edge-${cracksCount}`} className="crack-edge" aria-hidden="true" />}
+
+        <div className={`cracks-card cracks ${isCracking ? 'alert' : ''}`}>
+          <div className="cracks-title">Cracks</div>
+          <div
+            key={`n-${cracksCount}`}
+            className={`cracks-display ${crackHit ? 'thud' : ''} ${isCracking ? 'is-cracking' : ''}`}
+          >
+            {cracksCount}
+          </div>
+          {isCracking && <div className="cracks-state">Cracking now</div>}
+          <div className="variation">
+            <div className="variation-bar-container">
+              <div
+                className={`variation-bar-fill ${currentVariation >= 40 ? 'danger' : ''}`}
+                style={{ width: `${Math.min(100, currentVariation)}%` }}
+              />
+              <div className="variation-threshold" title="Crack threshold (40)" />
+            </div>
+            <div className="variation-label">
+              Variation: {currentVariation} / 100{currentVariation >= 40 ? ' · over the line' : ''}
+            </div>
+          </div>
+        </div>
+
+        {crackHit && (
+          <div
+            key={`slam-${cracksCount}`}
+            className={`slam ${isCracking ? 'is-cracking' : ''}`}
+            role="status"
+          >
+            <b>Crack!</b>
+            <span>That&apos;s {cracksCount}</span>
+          </div>
+        )}
+
+        {/* Ambient crowd-noise meter for the room. Not a measurement; no effect on score. */}
+        <div className="pressure-card">
+          <div className="pm-row">
+            <h2 className="meter-title">
+              Room pressure <TrendMark trend={pressureTrend} />
+            </h2>
+            <p className="pm-note">
+              Ambient mood from slow pulse and breathing. Just for the room, not a measurement.
+            </p>
+          </div>
+          <div
+            className="segs"
+            role="meter"
+            aria-label={`Room pressure, ${litSegments} of ${SEGMENTS}`}
+            aria-valuemin={0}
+            aria-valuemax={SEGMENTS}
+            aria-valuenow={litSegments}
+          >
+            {Array.from({ length: SEGMENTS }, (_, i) => (
+              <i
+                key={i}
+                className={i < litSegments ? (i >= litSegments - 2 ? 'on hot' : 'on') : ''}
+              />
+            ))}
+          </div>
+          <div className="pm-scale">
+            <span>Quiet room</span>
+            <span className="vitals-stats">
+              <span>{pressureScore}%</span>
+              <span>Pulse: {pulseBpm ? `${pulseBpm} BPM` : 'reading...'}</span>
+              <span>Breathing: {breathingRate ? `${breathingRate}/min` : 'reading...'}</span>
+              <span className="meter-status">[{pressureStatus}]</span>
+            </span>
+            <span>Loud room</span>
+          </div>
+        </div>
+
+        {isVoided && (
+          <div className="void-banner" role="alert">
+            <h2>Round Voided</h2>
+            <p>Face lost for more than 10 seconds.</p>
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={() => {
+                onRoundFinished({
+                  totalCracks: detectorRef.current.getState().totalCracks,
+                  firstCrackMs: detectorRef.current.getState().firstCrackMs,
+                  cracks: detectorRef.current.getState().cracks,
+                  spokeEvents: [...spokeEventsRef.current],
+                  faceLossTotalMs: faceLossMsRef.current,
+                  voided: true
+                })
+              }}
+            >
+              Continue (Voided)
+            </button>
+          </div>
+        )}
+
+        {isFaceLost && !isVoided && (
+          <div className="paused-banner" role="alert">
+            <div>
+              <h2>Back in frame</h2>
+              <p>Clock paused. Move back into frame!</p>
+            </div>
+          </div>
+        )}
       </div>
+
+      <Bug
+        context="Fewest cracks wins · later first crack breaks a tie"
+        note="For entertainment only. Not a medical device or lie detector."
+      />
     </div>
   )
 }

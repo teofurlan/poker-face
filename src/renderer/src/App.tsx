@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { face, listCameras } from './face/face'
 import type { FaceStatus } from './face/faceSession'
 import { CalibrationScreen, type CalibrationStatus } from './components/CalibrationScreen'
+import { Bug } from './components/Chrome'
 import { CameraPreview } from './components/CameraPreview'
 import { ConsentScreen } from './components/ConsentScreen'
 import { LeaderboardScreen } from './components/LeaderboardScreen'
@@ -44,7 +45,10 @@ function KeyScreen({ onSaved }: { onSaved: () => void }): React.JSX.Element {
         aria-label="Presage API key"
       />
       {error && <p className="error">{error}</p>}
-      <button type="submit">Save key</button>
+      <button type="submit" className="primary-btn">
+        Save key
+      </button>
+      <Bug context="Setup · API key" />
     </form>
   )
 }
@@ -71,12 +75,19 @@ function CameraScreen({
         setCameras([])
       })
   }, [])
-  if (!cameras) return <div className="panel">Looking for cameras…</div>
+  if (!cameras)
+    return (
+      <div className="panel">
+        <h1>Looking for cameras…</h1>
+        <Bug context="Setup · camera" />
+      </div>
+    )
   if (!cameras.length)
     return (
       <div className="panel">
         <h1>No camera found</h1>
         <p className="error">{error ?? 'Connect a camera and restart Poker Face.'}</p>
+        <Bug context="Setup · camera" />
       </div>
     )
   const chosen = cameras.find((c) => c.id === selected)
@@ -108,6 +119,7 @@ function CameraScreen({
           Test Camera
         </button>
       </div>
+      <Bug context="Setup · camera" />
     </div>
   )
 }
@@ -134,14 +146,15 @@ function TestCameraScreen({
   const faceSeen = status?.faceDetected
   return (
     <div className="panel">
-      <p className="muted">{camera.name}</p>
+      <p className="muted">Testing camera: {camera.name}</p>
       <div className={`face ${faceSeen ? 'on' : 'off'}`}>{faceSeen ? 'FACE' : 'NO FACE'}</div>
       <p className="validation">{status?.validation ?? 'Starting camera'}</p>
       {(error ?? status?.error) && <p className="error">{error ?? status?.error}</p>}
-      <button type="button" onClick={onBack}>
+      <button type="button" className="secondary-btn" onClick={onBack}>
         Back
       </button>
       <CameraPreview />
+      <Bug context="Setup · camera test" />
     </div>
   )
 }
@@ -374,7 +387,12 @@ function GameScreen({
     )
   }
 
-  return <div className="panel">Loading game…</div>
+  return (
+    <div className="panel">
+      <h1>Loading game…</h1>
+      <Bug />
+    </div>
+  )
 }
 
 function App(): React.JSX.Element {
@@ -387,8 +405,13 @@ function App(): React.JSX.Element {
 
   return (
     <main>
-      <header>Poker Face</header>
-      {screen === 'loading' && <div className="panel">Loading…</div>}
+      <div className="lamp" aria-hidden="true" />
+      {screen === 'loading' && (
+        <div className="panel">
+          <h1>Loading…</h1>
+          <Bug />
+        </div>
+      )}
       {screen === 'key' && <KeyScreen onSaved={() => setScreen('camera')} />}
       {screen === 'camera' && (
         <CameraScreen

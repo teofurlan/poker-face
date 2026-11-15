@@ -1,3 +1,5 @@
+import { Bug } from './Chrome'
+
 interface ConsentScreenProps {
   players: string[]
   onConfirmConsent: () => void
@@ -11,13 +13,13 @@ export function ConsentScreen({
 }: ConsentScreenProps): React.JSX.Element {
   return (
     <div className="panel consent-panel">
-      <h1>Consent & Privacy</h1>
-      <p className="muted">Before we start, everyone must agree to take part.</p>
+      <div className="consent-head">
+        <h1>Consent & Privacy</h1>
+        <p className="muted">Before we start, everyone must agree to take part.</p>
+      </div>
 
       <div className="consent-box">
-        <p>
-          <strong>Players taking the hot seat:</strong>
-        </p>
+        <h2>Players taking the hot seat</h2>
         <div className="consent-names">
           {players.map((p, idx) => (
             <span key={p} className="consent-chip">
@@ -54,6 +56,8 @@ export function ConsentScreen({
           Back to Lobby
         </button>
       </div>
+
+      <Bug context="Consent · one agreement for everyone listed" />
     </div>
   )
 }

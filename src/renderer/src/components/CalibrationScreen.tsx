@@ -5,6 +5,7 @@ import {
   describeCalibrationFailure,
   describeValidation
 } from '../game/calibration'
+import { Bug } from './Chrome'
 
 const CALIBRATION_MS = 8000
 
@@ -107,41 +108,56 @@ export function CalibrationScreen({
   if (cameraError) {
     return (
       <div className="panel calibration-panel">
-        <p className="muted">Calibrating Hot Seat: {playerName}</p>
         <h1>Camera unavailable</h1>
+        <p className="cal-who">Calibrating Hot Seat: {playerName}</p>
         <p className="error">{cameraError}</p>
         <div className="calibration-actions">
           <button type="button" className="secondary-btn" onClick={onCancel}>
             Back
           </button>
         </div>
+        <Bug context="Calibration · camera unavailable" />
       </div>
     )
   }
 
-  return (
-    <div className="panel calibration-panel">
-      <p className="muted">Calibrating Hot Seat: {playerName}</p>
+  const litSegments = Math.floor((CALIBRATION_MS - msLeft) / 1000)
 
+  return (
+    <div className={`panel calibration-panel ${stage === 'calibrating' ? 'counting' : ''}`}>
       {stage === 'framing' && (
         <>
-          <h1>Get in frame</h1>
-          <p className="validation">{hint}</p>
+          <div className="oval" aria-hidden="true" />
+          <h1 className="cal-title">Get in frame</h1>
+          <p className="cal-who">Calibrating Hot Seat: {playerName}</p>
+          <p className="cal-hint">
+            <small>Camera says</small>
+            <span className="validation">{hint}</span>
+          </p>
           <p className="hint">Calibration starts once your face is clearly visible.</p>
         </>
       )}
 
       {stage === 'calibrating' && (
         <>
-          <h1>Calibrating: {secondsLeft}s</h1>
-          <div className="countdown-ring">{secondsLeft}</div>
-          <p className="validation">{hint}</p>
-          <div className="progress-bar-container">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${((CALIBRATION_MS - msLeft) / CALIBRATION_MS) * 100}%` }}
-            />
+          <p className="cal-who">Calibrating Hot Seat: {playerName}</p>
+          <h1 className="cal-cap">Calibrating: {secondsLeft}s</h1>
+          <div className="countdown-ring" aria-hidden="true">
+            {secondsLeft}
           </div>
+          <div
+            className="progress-bar-container"
+            role="progressbar"
+            aria-label="Calibration progress"
+            aria-valuemin={0}
+            aria-valuemax={8}
+            aria-valuenow={litSegments}
+          >
+            {Array.from({ length: CALIBRATION_MS / 1000 }, (_, i) => (
+              <i key={i} className={i < litSegments ? 'on' : ''} />
+            ))}
+          </div>
+          <p className="validation">{hint}</p>
           <p className="hint">Challengers, stay quiet while we learn the resting face.</p>
         </>
       )}
@@ -149,6 +165,7 @@ export function CalibrationScreen({
       {stage === 'failed' && (
         <>
           <h1>Calibration Failed</h1>
+          <p className="cal-who">Calibrating Hot Seat: {playerName}</p>
           <p className="error">{failure}</p>
           <div className="calibration-actions">
             {retriesLeft > 0 ? (
@@ -165,6 +182,15 @@ export function CalibrationScreen({
       )}
 
       {sdkError && <p className="error">{sdkError}</p>}
+
+      <Bug
+        context={`Calibration · ${playerName}`}
+        note={
+          stage === 'calibrating'
+            ? 'The round starts with zero cracks'
+            : 'Nothing is recorded or stored'
+        }
+      />
     </div>
   )
 }
