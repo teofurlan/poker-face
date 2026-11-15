@@ -155,6 +155,7 @@ function GameScreen({
 }): React.JSX.Element {
   const [session] = useState(() => createSessionMachine())
   const [sessionState, setSessionState] = useState<SessionState>(() => session.getState())
+  const [cameraError, setCameraError] = useState<string | null>(null)
 
   // Active status listener refs
   const statusReceiverRef = useRef<((status: CalibrationStatus) => void) | null>(null)
@@ -203,7 +204,9 @@ function GameScreen({
   }, [])
 
   const startCamera = async (): Promise<void> => {
-    await face.start(camera.id)
+    setCameraError(null)
+    const result = await face.start(camera.id)
+    if (!result.ok) setCameraError(result.error)
   }
 
   const stopCamera = async (): Promise<void> => {
@@ -277,8 +280,10 @@ function GameScreen({
             session.calibrationCompleted(baseline)
             sync()
           }}
+          cameraError={cameraError}
           onCancel={async () => {
             await stopCamera()
+            setCameraError(null)
             session.resetToLobby()
             sync()
           }}

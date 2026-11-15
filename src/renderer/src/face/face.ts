@@ -39,22 +39,38 @@ const session = createFaceSession({
   faceMetrics: [...faceMetrics, ...cardioMetrics, ...breathingMetrics]
 })
 
+// Starts run one at a time; a stop() bumps the epoch so starts still waiting for the key give up.
+let startChain: Promise<unknown> = Promise.resolve()
+let epoch = 0
+
+async function startOnce(cameraId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const myEpoch = epoch
+  const apiKey = await window.api.keyForSession()
+  if (myEpoch !== epoch) return { ok: false, error: 'Camera start was cancelled.' }
+  if (!apiKey) return { ok: false, error: 'No API key yet.' }
+  try {
+    const stream = await session.start({ apiKey, cameraId }, (status) => {
+      for (const listener of statusListeners) listener(status)
+    })
+    if (myEpoch !== epoch) return { ok: false, error: 'Camera start was cancelled.' }
+    setStream(stream as MediaStream)
+    return { ok: true }
+  } catch (err) {
+    // A start that failed and could not stop its session may still be billing.
+    if ((err as { forced?: boolean } | null)?.forced) await window.api.forceExit()
+    return { ok: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
 export const face = {
-  async start(cameraId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-    const apiKey = await window.api.keyForSession()
-    if (!apiKey) return { ok: false, error: 'No API key yet.' }
-    try {
-      const stream = await session.start({ apiKey, cameraId }, (status) => {
-        for (const listener of statusListeners) listener(status)
-      })
-      setStream(stream as MediaStream)
-      return { ok: true }
-    } catch (err) {
-      return { ok: false, error: err instanceof Error ? err.message : String(err) }
-    }
+  start(cameraId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    const run = startChain.then(() => startOnce(cameraId))
+    startChain = run.catch(() => undefined)
+    return run
   },
 
   async stop(): Promise<StopResult> {
+    epoch += 1
     const result = await session.stop()
     setStream(null)
     // A session that would not stop may still be billing: only ending the app guarantees it ends.

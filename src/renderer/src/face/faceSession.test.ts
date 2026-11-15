@@ -44,12 +44,16 @@ function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
   const streams: FakeStream[] = []
   const requestedCameras: string[] = []
   let failCamera: string | null = null
+  let holdCamera = false
+  const cameraGates: (() => void)[] = []
+  let failCreate = false
   const created: FakeSdk[] = []
   const options: unknown[] = []
   const statuses: unknown[] = []
   const session = createFaceSession({
     createSdk: (opts) => {
       options.push(opts)
+      if (failCreate) throw new Error('create failed')
       if (created.length === 0) {
         created.push(sdk)
         return sdk
@@ -64,6 +68,7 @@ function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
       if (failCamera) throw new Error(failCamera)
       const stream = new FakeStream()
       streams.push(stream)
+      if (holdCamera) await new Promise<void>((resolve) => cameraGates.push(resolve))
       return stream
     },
     faceMetrics: [42],
@@ -79,6 +84,9 @@ function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
     streams,
     requestedCameras,
     failCameraWith: (message: string) => (failCamera = message),
+    holdCamera: () => (holdCamera = true),
+    releaseCamera: () => cameraGates.shift()?.(),
+    failCreate: () => (failCreate = true),
     onStatus: (s: unknown) => statuses.push(s)
   }
 }
@@ -254,5 +262,101 @@ describe('face session', () => {
     await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toThrow(
       /already running/
     )
+  })
+
+  it('rejects a second start while the first is still opening the camera', async () => {
+    const { session, onStatus, holdCamera, releaseCamera, streams } = setup()
+    holdCamera()
+    const first = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    expect(session.isRunning()).toBe(true)
+    await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toThrow(
+      /already running/
+    )
+    releaseCamera()
+    await first
+    expect(streams).toHaveLength(1)
+  })
+
+  it('stop during a pending start cancels it, releases the stream and creates no SDK', async () => {
+    const { created, session, onStatus, holdCamera, releaseCamera, streams } = setup()
+    holdCamera()
+    const starting = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await vi.waitFor(() => expect(streams).toHaveLength(1))
+    const stopping = session.stop()
+    releaseCamera()
+    await expect(starting).rejects.toThrow(/cancelled/)
+    await expect(stopping).resolves.toBe('stopped')
+    expect(streams[0].stopped).toBe(1)
+    expect(created).toHaveLength(0)
+    expect(session.isRunning()).toBe(false)
+  })
+
+  it('start, stop, start (StrictMode) leaves only the second session alive', async () => {
+    const { created, session, onStatus, holdCamera, releaseCamera, streams } = setup()
+    holdCamera()
+    const first = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await vi.waitFor(() => expect(streams).toHaveLength(1))
+    const stopping = session.stop()
+    const second = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    releaseCamera()
+    await expect(first).rejects.toThrow(/cancelled/)
+    await stopping
+    await vi.waitFor(() => expect(streams).toHaveLength(2))
+    releaseCamera()
+    await expect(second).resolves.toBe(streams[1])
+    expect(streams[0].stopped).toBe(1)
+    expect(streams[1].stopped).toBe(0)
+    expect(created).toHaveLength(1)
+    expect(created[0].destroyCalls).toBe(0)
+    expect(session.isRunning()).toBe(true)
+  })
+
+  it('releases the camera stream when creating the SDK throws', async () => {
+    const { session, onStatus, streams, failCreate } = setup()
+    failCreate()
+    await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toThrow(
+      'create failed'
+    )
+    expect(streams[0].stopped).toBe(1)
+    expect(session.isRunning()).toBe(false)
+  })
+
+  it('releases the stream and destroys the SDK when useMediaStream throws', async () => {
+    const { session, onStatus, streams, created } = setup()
+    const original = FakeSdk.prototype.useMediaStream
+    FakeSdk.prototype.useMediaStream = (): never => {
+      throw new Error('bad stream')
+    }
+    try {
+      await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toThrow(
+        'bad stream'
+      )
+    } finally {
+      FakeSdk.prototype.useMediaStream = original
+    }
+    expect(streams[0].stopped).toBe(1)
+    expect(created[0].destroyCalls).toBe(1)
+    expect(session.isRunning()).toBe(false)
+  })
+
+  it('marks a failed start as forced when the cleanup stop hangs', async () => {
+    const { sdk, session, onStatus } = setup()
+    sdk.start = async (): Promise<void> => {
+      sdk.hangStop = true
+      throw new Error('start failed')
+    }
+    await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toMatchObject(
+      { message: 'start failed', forced: true }
+    )
+  })
+
+  it('does not resend stale samples with validation-only statuses', async () => {
+    const { sdk, statuses, session, onStatus } = setup()
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    sdk.emit('metrics', new Uint8Array(0), 0)
+    expect((statuses.at(-1) as { expressions?: unknown }).expressions).toBeDefined()
+    sdk.emit('validationStatus', 0, 0, '')
+    expect((statuses.at(-1) as { expressions?: unknown }).expressions).toBeUndefined()
+    expect(statuses.at(-1)).toMatchObject({ faceDetected: true, validationCode: 0 })
   })
 })

@@ -72,14 +72,43 @@ export function createFaceSession(deps: Deps): {
   let stream: StreamLike | null = null
   let stopping: Promise<StopResult> | null = null
   let forced = false
+  // A start in progress counts as running; stop() cancels it and waits for its teardown.
+  let starting: { cancelled: boolean; finished: Promise<void> } | null = null
+
+  const releaseStream = (s: StreamLike): void => {
+    for (const track of s.getTracks()) track.stop()
+  }
 
   async function start(
     args: { apiKey: string; cameraId: string },
     onStatus: (s: FaceStatus) => void
   ): Promise<StreamLike> {
-    if (stopping) await stopping
+    while (stopping || starting?.cancelled) {
+      if (stopping) await stopping
+      else await starting?.finished
+    }
     if (forced) throw new Error('The previous camera session could not be stopped; app is closing.')
-    if (sdk) throw new Error('A face session is already running.')
+    if (sdk || starting) throw new Error('A face session is already running.')
+    let finish: () => void = () => {}
+    const token = {
+      cancelled: false,
+      finished: new Promise<void>((resolve) => (finish = resolve))
+    }
+    starting = token
+    try {
+      return await run(token, args, onStatus)
+    } finally {
+      if (starting === token) starting = null
+      finish()
+    }
+  }
+
+  async function run(
+    token: { cancelled: boolean },
+    args: { apiKey: string; cameraId: string },
+    onStatus: (s: FaceStatus) => void
+  ): Promise<StreamLike> {
+    // Persistent fields; sample fields (expressions, pulse, ...) are only sent with the event that carried them.
     const status: FaceStatus = {
       running: true,
       faceDetected: false,
@@ -89,15 +118,53 @@ export function createFaceSession(deps: Deps): {
       error: null
     }
     const emit = (patch: Partial<FaceStatus>): void => {
-      Object.assign(status, patch)
-      onStatus({ ...status })
+      const { expressions, pulse, breathing, talking, ...persistent } = patch
+      Object.assign(status, persistent)
+      onStatus({ ...status, expressions, pulse, breathing, talking })
     }
     const camera = await deps.acquireStream(args.cameraId)
-    const s = deps.createSdk({
-      apiKey: args.apiKey,
-      requestedMetrics: [...deps.faceMetrics],
-      enableTelemetry: false
-    })
+    if (token.cancelled) {
+      releaseStream(camera)
+      throw new Error('Face session start was cancelled.')
+    }
+    let s: SdkLike | null = null
+    try {
+      s = deps.createSdk({
+        apiKey: args.apiKey,
+        requestedMetrics: [...deps.faceMetrics],
+        enableTelemetry: false
+      })
+      const own = s
+      attachListeners(own, emit)
+      own.useMediaStream(camera)
+    } catch (err) {
+      try {
+        s?.destroy()
+      } catch {
+        // the stream release below matters more
+      }
+      releaseStream(camera)
+      throw err
+    }
+    sdk = s
+    stream = camera
+    emit({})
+    try {
+      await s.start()
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      // Only tear down our own session; a newer one may already own the module state.
+      if (sdk === s) {
+        const result = await stop()
+        if (result === 'forced') Object.assign(error, { forced: true })
+      }
+      throw error
+    }
+    if (token.cancelled) throw new Error('Face session start was cancelled.')
+    return camera
+  }
+
+  function attachListeners(s: SdkLike, emit: (patch: Partial<FaceStatus>) => void): void {
     s.on('validationStatus', (code: number) => {
       emit({
         validationCode: code,
@@ -141,23 +208,16 @@ export function createFaceSession(deps: Deps): {
     s.on('error', (code: number, message: string) => {
       emit({ error: `${message} (code ${code})` })
     })
-    s.useMediaStream(camera)
-    sdk = s
-    stream = camera
-    emit({})
-    try {
-      await s.start()
-    } catch (err) {
-      await stop()
-      throw err
-    }
-    return camera
   }
 
   function stop(): Promise<StopResult> {
     if (stopping) return stopping
     const s = sdk
-    if (!s) return Promise.resolve('idle')
+    if (starting) starting.cancelled = true
+    if (!s) {
+      const pending = starting
+      return pending ? pending.finished.then((): StopResult => 'stopped') : Promise.resolve('idle')
+    }
     let timer: ReturnType<typeof setTimeout> | undefined
     const timeout = new Promise<'forced'>((resolve) => {
       timer = setTimeout(() => resolve('forced'), stopTimeoutMs)
@@ -194,5 +254,5 @@ export function createFaceSession(deps: Deps): {
     return run
   }
 
-  return { start, stop, isRunning: () => sdk !== null }
+  return { start, stop, isRunning: () => sdk !== null || starting !== null }
 }

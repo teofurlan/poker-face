@@ -18,6 +18,7 @@ interface CalibrationScreenProps {
   playerName: string
   onCalibrated: (baseline: ExpressionScores) => void
   onCancel: () => void
+  cameraError?: string | null
   registerStatusReceiver: (fn: (status: CalibrationStatus) => void) => () => void
 }
 
@@ -27,6 +28,7 @@ export function CalibrationScreen({
   playerName,
   onCalibrated,
   onCancel,
+  cameraError,
   registerStatusReceiver
 }: CalibrationScreenProps): React.JSX.Element {
   const [stage, setStage] = useState<Stage>('framing')
@@ -101,6 +103,21 @@ export function CalibrationScreen({
   }
 
   const secondsLeft = Math.ceil(msLeft / 1000)
+
+  if (cameraError) {
+    return (
+      <div className="panel calibration-panel">
+        <p className="muted">Calibrating Hot Seat: {playerName}</p>
+        <h1>Camera unavailable</h1>
+        <p className="error">{cameraError}</p>
+        <div className="calibration-actions">
+          <button type="button" className="secondary-btn" onClick={onCancel}>
+            Back
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="panel calibration-panel">

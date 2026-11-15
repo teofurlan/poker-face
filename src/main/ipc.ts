@@ -34,10 +34,15 @@ function rememberedCamera(): CameraInfo | null {
   }
 }
 
-export function registerIpc(getWindow: () => BrowserWindow | null): void {
+export function registerIpc(
+  getWindow: () => BrowserWindow | null,
+  isAppUrl: (url: string) => boolean
+): void {
   // Only our own window's main frame may ask for the key: the renderer SDK needs it to start a session.
   const fromOurWindow = (e: IpcMainInvokeEvent): boolean =>
-    e.sender === getWindow()?.webContents && e.senderFrame === e.sender.mainFrame
+    e.sender === getWindow()?.webContents &&
+    e.senderFrame === e.sender.mainFrame &&
+    isAppUrl(e.senderFrame?.url ?? '')
 
   ipcMain.handle('key:status', () => ({ source: keyStore.resolve().source }))
   ipcMain.handle('key:save', (_e, key: string) => keyStore.save(String(key ?? '')))
@@ -57,5 +62,7 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   })
 
   // A session that would not stop may still be billing: only ending the process guarantees it ends.
-  ipcMain.handle('face:forceExit', () => app.exit(3))
+  ipcMain.handle('face:forceExit', (e) => {
+    if (fromOurWindow(e)) app.exit(3)
+  })
 }
