@@ -531,3 +531,22 @@ select:focus-visible {
   width: 100%;
   margin-top: 1rem;
 }
+
+.camera-preview {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 200px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  transform: scaleX(-1);
+  border-radius: 0.5rem;
+  border: 1px solid #333344;
+  background: #000;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.camera-preview[hidden] {
+  display: none;
+}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { face, listCameras } from './face/face'
 import type { FaceStatus } from './face/faceSession'
 import { CalibrationScreen, type CalibrationStatus } from './components/CalibrationScreen'
+import { CameraPreview } from './components/CameraPreview'
 import { ConsentScreen } from './components/ConsentScreen'
 import { LeaderboardScreen } from './components/LeaderboardScreen'
 import { LobbyScreen } from './components/LobbyScreen'
@@ -140,6 +141,7 @@ function TestCameraScreen({
       <button type="button" onClick={onBack}>
         Back
       </button>
+      <CameraPreview />
     </div>
   )
 }
@@ -268,50 +270,56 @@ function GameScreen({
   // Calibration Phase
   if (sessionState.phase === 'calibrating') {
     return (
-      <CalibrationScreen
-        playerName={sessionState.currentPlayerName ?? 'Player'}
-        onCalibrated={(baseline) => {
-          session.calibrationCompleted(baseline)
-          sync()
-        }}
-        onCancel={async () => {
-          await stopCamera()
-          session.resetToLobby()
-          sync()
-        }}
-        registerStatusReceiver={(fn) => {
-          statusReceiverRef.current = fn
-          return () => {
-            statusReceiverRef.current = null
-          }
-        }}
-      />
+      <>
+        <CalibrationScreen
+          playerName={sessionState.currentPlayerName ?? 'Player'}
+          onCalibrated={(baseline) => {
+            session.calibrationCompleted(baseline)
+            sync()
+          }}
+          onCancel={async () => {
+            await stopCamera()
+            session.resetToLobby()
+            sync()
+          }}
+          registerStatusReceiver={(fn) => {
+            statusReceiverRef.current = fn
+            return () => {
+              statusReceiverRef.current = null
+            }
+          }}
+        />
+        <CameraPreview />
+      </>
     )
   }
 
   // Round Phase
   if (sessionState.phase === 'round' && sessionState.currentBaseline) {
     return (
-      <RoundScreen
-        playerName={sessionState.currentPlayerName ?? 'Player'}
-        baseline={sessionState.currentBaseline}
-        onRoundFinished={async (result) => {
-          await stopCamera()
-          session.roundCompleted(result)
-          sync()
-        }}
-        onAbort={async () => {
-          await stopCamera()
-          session.resetToLobby()
-          sync()
-        }}
-        registerRoundEvents={(handlers) => {
-          roundEventsRef.current = handlers
-          return () => {
-            roundEventsRef.current = null
-          }
-        }}
-      />
+      <>
+        <RoundScreen
+          playerName={sessionState.currentPlayerName ?? 'Player'}
+          baseline={sessionState.currentBaseline}
+          onRoundFinished={async (result) => {
+            await stopCamera()
+            session.roundCompleted(result)
+            sync()
+          }}
+          onAbort={async () => {
+            await stopCamera()
+            session.resetToLobby()
+            sync()
+          }}
+          registerRoundEvents={(handlers) => {
+            roundEventsRef.current = handlers
+            return () => {
+              roundEventsRef.current = null
+            }
+          }}
+        />
+        <CameraPreview />
+      </>
     )
   }
 
