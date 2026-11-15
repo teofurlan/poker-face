@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Poker Face · Fight Night design system</title>
+<meta name="viewport" content="width=1320">
+<!--
+  Static check page. It loads the REAL stylesheet and mirrors the markup of each screen, so the
+  app's screens can be looked at without a camera session. Open with ?f=<id> to show one frame
+  (ids are on each <section data-f>). The previous incumbent-look sheet is retired.
+-->
+<link rel="stylesheet" href="../src/renderer/src/assets/main.css">
+<style>
+  html { font-size: 16px; background: #2a2c33; }
+  body { overflow: auto; height: auto; padding: 24px 20px 80px; }
+  #root { height: auto; }
+  .doc { width: 1280px; margin: 0 auto 32px; color: #e6e8ee; }
+  .doc h2 { font-size: 3.5rem; margin: 0 0 16px; }
+  .doc h3 { font: 700 1.5rem var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); margin: 32px 0 12px; }
+  .sw { display: inline-grid; grid-template-rows: 64px auto; width: 150px; margin: 0 12px 12px 0; font: 600 14px var(--body); }
+  .sw i { display: block; border: 1px solid #ffffff44; }
+  .sw span { padding-top: 6px; color: #cfd3dd; }
+  .ty { display: grid; grid-template-columns: 200px 1fr; gap: 6px 16px; align-items: baseline; font: 600 14px var(--body); color: #cfd3dd; }
+  .label { width: 1280px; margin: 28px auto 8px; font: 700 15px var(--body); color: #9aa1b2; }
+  .frame { width: 1280px; height: 800px; margin: 0 auto; transform: translateZ(0); box-shadow: 0 18px 40px rgba(0,0,0,.45); }
+  .frame .camera-preview { display: block; background: #000 radial-gradient(ellipse 14% 38% at 50% 52%, #3a4254 0 60%, #000 62%); }
+  section[hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<section class="doc" data-f="tokens">
+  <h2>Fight Night <em>tokens</em></h2>
+  <h3>Colour</h3>
+  <div>
+    <span class="sw"><i style="background:#06070b"></i><span>--void #06070b</span></span>
+    <span class="sw"><i style="background:#11141c"></i><span>--steel #11141c</span></span>
+    <span class="sw"><i style="background:#1a1f2b"></i><span>--steel-2 #1a1f2b</span></span>
+    <span class="sw"><i style="background:#2f3748"></i><span>--line #2f3748</span></span>
+    <span class="sw"><i style="background:#f6f2e9"></i><span>--light #f6f2e9</span></span>
+    <span class="sw"><i style="background:#b3bac8"></i><span>--dim #b3bac8</span></span>
+    <span class="sw"><i style="background:#8a92a4"></i><span>--faint #8a92a4</span></span>
+    <span class="sw"><i style="background:#ff4a3b"></i><span>--crack #ff4a3b</span></span>
+    <span class="sw"><i style="background:#58aeff"></i><span>--blue #58aeff</span></span>
+    <span class="sw"><i style="background:#f4c34f"></i><span>--gold #f4c34f</span></span>
+  </div>
+  <h3>Type (Bahnschrift, system font)</h3>
+  <div class="ty">
+    <span>--fs-wordmark 156px</span><span style="font:700 156px/.92 var(--display);text-transform:uppercase">Poker</span>
+    <span>--fs-hero 136px</span><span style="font:700 136px/.92 var(--display);text-transform:uppercase">Get in frame</span>
+    <span>--fs-title 72px</span><span style="font:700 72px/.92 var(--display);text-transform:uppercase">Consent &amp; Privacy</span>
+    <span>--fs-slot 36px</span><span style="font:700 36px/1 var(--display);text-transform:uppercase">Maya · Tomás · Priya</span>
+    <span>--fs-label 26px</span><span style="font:600 26px var(--body);color:var(--dim)">One of you keeps a straight face for 60 seconds.</span>
+    <span>--fs-body 20px</span><span style="font:400 20px var(--body)">Challengers, stay quiet while we learn the resting face.</span>
+    <span>--fs-small 16px (floor)</span><span style="font:600 16px var(--body)">Nothing is recorded or stored</span>
+  </div>
+  <h3>Controls</h3>
+  <div style="display:flex;gap:16px;align-items:center">
+    <button class="primary-btn">Primary</button>
+    <button class="secondary-btn">Secondary</button>
+    <button class="primary-btn" disabled>Disabled</button>
+    <button class="abort-btn">Abort Round</button>
+    <span class="face on" style="font-size:3rem">Face</span>
+    <span class="face off" style="font-size:3rem;border-width:4px">No face</span>
+  </div>
+  <p class="error" style="margin-top:16px;max-width:40rem">Camera permission was denied.</p>
+</section>
+
+<div class="label">Key</div>
+<section data-f="key"><main class="frame"><div class="lamp"></div>
+  <form class="panel">
+    <h1>Your Presage API key</h1>
+    <p>Get a free key at <strong>physiology.presagetech.com</strong>. It is saved only on this computer, encrypted.</p>
+    <input type="password" aria-label="Presage API key" value="xxxxxxxxxxxx">
+    <button type="button" class="primary-btn">Save key</button>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Setup · API key</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </form></main></section>
+
+<div class="label">Camera test (with corner preview)</div>
+<section data-f="test"><main class="frame"><div class="lamp"></div>
+  <div class="panel">
+    <p class="muted">Testing camera: Integrated Webcam</p>
+    <div class="face on">FACE</div>
+    <p class="validation">Face detected, hold still</p>
+    <button type="button" class="secondary-btn">Back</button>
+    <video class="camera-preview" aria-label="Camera preview"></video>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Setup · camera test</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </div></main></section>
+
+<div class="label">Lobby</div>
+<section data-f="lobby"><main class="frame"><div class="lamp"></div>
+  <div class="panel lobby-panel">
+    <div class="lobby-brand"><h1 class="wordmark">Poker <em>Face</em></h1><p class="lede">1 to 6 players in the hot seat, played in entry order.</p></div>
+    <div class="card">
+      <h2 class="card-title">Tonight's card</h2>
+      <div class="player-list">
+        <div class="player-chip"><span class="player-number">1</span><span class="player-name">Maya</span><button class="remove-btn" aria-label="Remove Maya"><svg viewBox="0 0 16 16"><path d="M2 2 14 14M14 2 2 14" stroke="currentColor" stroke-width="2.5"/></svg></button><span class="player-corner"></span></div>
+        <div class="player-chip"><span class="player-number">2</span><span class="player-name">Tomás</span><button class="remove-btn" aria-label="Remove"><svg viewBox="0 0 16 16"><path d="M2 2 14 14M14 2 2 14" stroke="currentColor" stroke-width="2.5"/></svg></button><span class="player-corner"></span></div>
+        <div class="player-chip"><span class="player-number">3</span><span class="player-name">Priya</span><button class="remove-btn" aria-label="Remove"><svg viewBox="0 0 16 16"><path d="M2 2 14 14M14 2 2 14" stroke="currentColor" stroke-width="2.5"/></svg></button><span class="player-corner"></span></div>
+        <div class="player-chip"><span class="player-number">4</span><span class="player-name">Jonas</span><button class="remove-btn" aria-label="Remove"><svg viewBox="0 0 16 16"><path d="M2 2 14 14M14 2 2 14" stroke="currentColor" stroke-width="2.5"/></svg></button><span class="player-corner"></span></div>
+        <div class="player-chip empty"><span class="player-number">5</span><span class="player-name">Open seat</span><span></span><span class="player-corner"></span></div>
+        <div class="player-chip empty"><span class="player-number">6</span><span class="player-name">Open seat</span><span></span><span class="player-corner"></span></div>
+      </div>
+      <form class="lobby-form"><input placeholder="Enter player name..." aria-label="New player name"><button type="button" class="secondary-btn" disabled>Add Player</button></form>
+      <div class="card-actions"><button class="primary-btn">Continue with 4 players</button><button class="secondary-btn">Change Camera</button><span class="seats">4 of 6 seats taken</span></div>
+    </div>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Silent hot seat · up to six players · one camera</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </div></main></section>
+
+<div class="label">Consent</div>
+<section data-f="consent"><main class="frame"><div class="lamp"></div>
+  <div class="panel consent-panel">
+    <div class="consent-head"><h1>Consent &amp; Privacy</h1><p class="muted">Before we start, everyone must agree to take part.</p></div>
+    <div class="consent-box"><h2>Players taking the hot seat</h2>
+      <div class="consent-names"><span class="consent-chip">#1 Maya</span><span class="consent-chip">#2 Tomás</span><span class="consent-chip">#3 Priya</span><span class="consent-chip">#4 Jonas</span></div>
+      <ul class="consent-points">
+        <li><strong>Camera sensing:</strong> The camera runs only during each player's own round to measure microexpressions and room tension.</li>
+        <li><strong>Private &amp; on-device:</strong> Processing happens locally on your computer. No video is ever recorded, stored, or uploaded.</li>
+        <li><strong>Pure entertainment:</strong> This is a party game, not a lie detector or medical instrument.</li>
+        <li><strong>One agreement:</strong> Pressing the button confirms that everyone listed agrees. Anyone unwilling must be removed from the lobby first.</li>
+      </ul></div>
+    <div class="consent-actions"><button class="primary-btn">Everyone Agrees — Start Game</button><button class="secondary-btn">Back to Lobby</button></div>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Consent · one agreement for everyone listed</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </div></main></section>
+
+<div class="label">Ready player</div>
+<section data-f="ready"><main class="frame"><div class="lamp"></div>
+  <div class="panel ready-panel">
+    <h1>Next in the Hot Seat</h1><div class="hot-seat-badge">Maya</div>
+    <p class="ready-rules"><strong>Player:</strong> Sit facing the camera. Keep a straight face in silence.<br><strong>Challengers:</strong> Your turn to make them crack!</p>
+    <button class="primary-btn">Start 8s Calibration</button>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Lap 1 · Player 1 of 4</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </div></main></section>
+
+<div class="label">Calibration: get in frame</div>
+<section data-f="cal-frame"><main class="frame"><div class="lamp"></div>
+  <div class="panel calibration-panel">
+    <div class="oval"></div>
+    <h1 class="cal-title">Get in frame</h1>
+    <p class="cal-who">Calibrating Hot Seat: Maya</p>
+    <p class="cal-hint"><small>Camera says</small><span class="validation">Move a little closer to the camera.</span></p>
+    <p class="hint">Calibration starts once your face is clearly visible.</p>
+    <video class="camera-preview"></video>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Calibration · Maya</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </div></main></section>
+
+<div class="label">Calibration: countdown</div>
+<section data-f="cal-count"><main class="frame"><div class="lamp"></div>
+  <div class="panel calibration-panel counting">
+    <p class="cal-who">Calibrating Hot Seat: Maya</p>
+    <h1 class="cal-cap">Calibrating: 5s</h1>
+    <div class="countdown-ring">5</div>
+    <div class="progress-bar-container"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="validation">Hold still</p>
+    <p class="hint">Challengers, stay quiet while we learn the resting face.</p>
+    <video class="camera-preview"></video>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Calibration · Maya</span><span class="bug-note">The round starts with zero cracks</span></footer>
+  </div></main></section>
+
+<div class="label">Calibration: failed</div>
+<section data-f="cal-fail"><main class="frame"><div class="lamp"></div>
+  <div class="panel calibration-panel">
+    <h1>Calibration Failed</h1><p class="cal-who">Calibrating Hot Seat: Maya</p>
+    <p class="error">We could not see your face clearly enough for long enough.</p>
+    <div class="calibration-actions"><button class="primary-btn">Try Calibration Again (2 retries left)</button></div>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Calibration · Maya</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </div></main></section>
+
+<div class="label">Live round, mid-crack</div>
+<section data-f="live"><main class="frame"><div class="lamp"></div>
+  <div class="panel round-panel">
+    <div class="round-top">
+      <div class="round-player"><span class="round-tag"></span><div><small>In the hot seat</small><span class="round-name">Maya</span></div></div>
+      <div class="round-timer">0:31</div>
+      <div class="round-side"><button class="abort-btn">Abort Round</button></div>
+    </div>
+    <div class="round-stage">
+      <div class="crack-edge"></div>
+      <div class="cracks"><div class="cracks-title">Cracks</div><div class="cracks-display thud is-cracking">3</div><div class="cracks-state">Cracking now</div>
+        <div class="variation"><div class="variation-bar-container"><div class="variation-bar-fill danger" style="width:62%"></div><div class="variation-threshold"></div></div><div class="variation-label">Variation: 62 / 100 · over the line</div></div></div>
+      <div class="slam is-cracking"><b>Crack!</b><span>That's 3</span></div>
+      <div class="pressure-card">
+        <div class="pm-row"><h2 class="meter-title">Room pressure <span class="trend"><svg viewBox="0 0 16 16" width="1em" height="1em"><path d="M8 2 15 14H1z" fill="currentColor"/></svg>Rising</span></h2><p class="pm-note">Ambient mood from slow pulse and breathing. Just for the room, not a measurement.</p></div>
+        <div class="segs"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on hot"></i><i class="on hot"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pm-scale"><span>Quiet room</span><span class="vitals-stats"><span>63%</span><span>Pulse: 82 BPM</span><span>Breathing: 15/min</span><span class="meter-status">[settled]</span></span><span>Loud room</span></div>
+      </div>
+    </div>
+    <video class="camera-preview"></video>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Fewest cracks wins · later first crack breaks a tie</span><span class="bug-note">For entertainment only. Not a medical device or lie detector.</span></footer>
+  </div></main></section>
+
+<div class="label">Live round, paused (Back in frame)</div>
+<section data-f="pause"><main class="frame"><div class="lamp"></div>
+  <div class="panel round-panel">
+    <div class="round-top">
+      <div class="round-player"><span class="round-tag"></span><div><small>In the hot seat</small><span class="round-name">Maya</span></div></div>
+      <div class="round-timer">0:31</div>
+      <div class="round-side"><button class="abort-btn">Abort Round</button></div>
+    </div>
+    <div class="round-stage">
+      <div class="cracks"><div class="cracks-title">Cracks</div><div class="cracks-display">3</div>
+        <div class="variation"><div class="variation-bar-container"><div class="variation-bar-fill" style="width:12%"></div><div class="variation-threshold"></div></div><div class="variation-label">Variation: 12 / 100</div></div></div>
+      <div class="paused-banner"><div><h2>Back in frame</h2><p>Clock paused. Move back into frame!</p></div></div>
+    </div>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Fewest cracks wins · later first crack breaks a tie</span><span class="bug-note">For entertainment only. Not a medical device or lie detector.</span></footer>
+  </div></main></section>
+
+<div class="label">Replay</div>
+<section data-f="replay"><main class="frame"><div class="lamp"></div>
+  <div class="panel replay-panel">
+    <h1>3 Cracks</h1><p class="replay-sub">Round Replay · Hot Seat: Maya</p>
+    <div class="replay-stats">
+      <div class="stat-box"><span class="stat-label">Time to first crack</span><span class="stat-value">9.0s</span></div>
+      <div class="stat-box"><span class="stat-label">Spoke marks</span><span class="stat-value">2</span></div>
+    </div>
+    <div class="timeline-container">
+      <div class="timeline-labels"><span>0s</span><span>15s</span><span>30s</span><span>45s</span><span>60s</span></div>
+      <div class="timeline-track">
+        <div class="timeline-crack-pin" style="left:15%;width:2%"></div>
+        <div class="timeline-crack-pin" style="left:48%;width:2.4%"></div>
+        <div class="timeline-crack-pin" style="left:71%;width:2%"></div>
+        <div class="timeline-spoke-pin" style="left:30%"></div><div class="timeline-spoke-pin" style="left:62%"></div>
+      </div>
+    </div>
+    <div class="timeline-key"><span><i class="k-crack"></i> Crack</span><span><i class="k-spoke"></i> Spoke</span></div>
+    <div class="replay-actions"><button class="primary-btn">Next Player (12s)</button></div>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Round replay · Maya</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </div></main></section>
+
+<div class="label">Leaderboard (final card)</div>
+<section data-f="leaderboard"><main class="frame"><div class="lamp"></div>
+  <div class="panel leaderboard-panel">
+    <h1>Final <em>card</em></h1>
+    <div class="leaderboard-table">
+      <div class="leaderboard-header"><span class="col-rank">#</span><span>Player</span><span>Cracks</span><span>First Crack</span></div>
+      <div class="leaderboard-row rank-1"><span class="col-rank">1</span><span class="col-name">Priya</span><span class="col-cracks">0</span><span class="col-time">Survived</span></div>
+      <div class="leaderboard-row"><span class="col-rank">2</span><span class="col-name">Jonas</span><span class="col-cracks">2</span><span class="col-time">48.0s</span></div>
+      <div class="leaderboard-row"><span class="col-rank">3</span><span class="col-name">Tomás</span><span class="col-cracks">2</span><span class="col-time">41.0s</span></div>
+      <div class="leaderboard-row"><span class="col-rank">4</span><span class="col-name">Maya</span><span class="col-cracks">4</span><span class="col-time">9.0s</span></div>
+    </div>
+    <div class="leaderboard-actions"><p class="winner-spotlight">Winner: <strong>Priya</strong> (0 cracks)</p><button class="primary-btn">Play Rematch (Lap 2)</button><button class="secondary-btn">New Session</button></div>
+    <footer class="bug"><b class="bug-brand">Poker Face</b><span class="bug-context">Lap 1 complete · 4 players</span><span class="bug-note">Nothing is recorded or stored</span></footer>
+  </div></main></section>
+
+<script>
+  var f = new URLSearchParams(location.search).get('f');
+  if (f) document.querySelectorAll('section[data-f]').forEach(function (s) { s.hidden = s.dataset.f !== f; }),
+    document.querySelectorAll('.label').forEach(function (l) { l.hidden = true; }),
+    document.body.style.padding = '0', document.querySelectorAll('.frame').forEach(function (e) { e.style.margin = '0'; }),
+    document.querySelectorAll('.doc').forEach(function (e) { e.style.margin = '0 0 0 0'; });
+  if (new URLSearchParams(location.search).has('still')) {
+    var st = document.createElement('style');
+    st.textContent = '*{animation:none!important}.crack-edge{box-shadow:inset 0 0 0 .5rem rgba(255,74,59,.8)}';
+    document.head.appendChild(st);
+  }
+</script>
+</body>
+</html>

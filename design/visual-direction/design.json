@@ -1,0 +1,9 @@
+{
+  "title": "Poker Face visual direction",
+  "brief": "Three distinct visual worlds for the Poker Face party game (Electron, one shared screen, readable across a room). Each artboard stacks six 1280x800 frames: Lobby, Calibration (Get in frame), Calibration (countdown), Live round mid-crack, Live round paused (Back in frame), Session leaderboard. The user picks one direction; none is final.",
+  "artboards": [
+    { "file": "01-fight-night.html", "title": "Fight Night", "tradeoff": "Loudest and most legible party energy (title-fight broadcast chrome); also the most familiar vocabulary and framed as competition rather than comedy", "width": 1320, "height": 5700 },
+    { "file": "02-page-100.html", "title": "Page 100", "tradeoff": "Highest contrast and funniest voice (teletext grid, four colour keys, a mosaic face whose mouth bends on a crack); hardest to extend, least premium", "width": 1320, "height": 5700 },
+    { "file": "03-deadpan.html", "title": "Deadpan", "tradeoff": "Most distinctive and best in a lit room (quiet gallery, serif, one vermilion crack); least arcade energy, relies on the players for noise", "width": 1320, "height": 5700 }
+  ]
+}
