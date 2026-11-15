@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FaceStatus } from '../../preload'
-import { CalibrationScreen } from './components/CalibrationScreen'
+import { CalibrationScreen, type CalibrationStatus } from './components/CalibrationScreen'
 import { ConsentScreen } from './components/ConsentScreen'
 import { LeaderboardScreen } from './components/LeaderboardScreen'
 import { LobbyScreen } from './components/LobbyScreen'
@@ -156,9 +156,7 @@ function GameScreen({
   const [sessionState, setSessionState] = useState<SessionState>(() => session.getState())
 
   // Active status listener refs
-  const sampleReceiverRef = useRef<
-    ((scores: ExpressionScores, validationCode: number) => void) | null
-  >(null)
+  const statusReceiverRef = useRef<((status: CalibrationStatus) => void) | null>(null)
   const roundEventsRef = useRef<{
     onExpression: (scores: ExpressionScores, ts: number) => void
     onPulse: (sample: VitalSample, ts: number) => void
@@ -175,8 +173,12 @@ function GameScreen({
   useEffect(() => {
     const off = window.api.onFaceStatus((status: FaceStatus) => {
       const now = Date.now()
+      statusReceiverRef.current?.({
+        validationCode: status.validationCode,
+        expressions: status.expressions as ExpressionScores | undefined,
+        error: status.error
+      })
       if (status.expressions) {
-        sampleReceiverRef.current?.(status.expressions as ExpressionScores, status.validationCode)
         roundEventsRef.current?.onExpression(status.expressions as ExpressionScores, now)
       }
       if (status.pulse) {
@@ -278,10 +280,10 @@ function GameScreen({
           session.resetToLobby()
           sync()
         }}
-        registerSampleReceiver={(fn) => {
-          sampleReceiverRef.current = fn
+        registerStatusReceiver={(fn) => {
+          statusReceiverRef.current = fn
           return () => {
-            sampleReceiverRef.current = null
+            statusReceiverRef.current = null
           }
         }}
       />

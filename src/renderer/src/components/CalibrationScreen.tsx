@@ -1,93 +1,138 @@
 import { useEffect, useRef, useState } from 'react'
 import { createBaselineCalibrator, type ExpressionScores } from '../game/crackDetector'
+import {
+  createFramingGate,
+  describeCalibrationFailure,
+  describeValidation
+} from '../game/calibration'
+
+const CALIBRATION_MS = 8000
+
+export interface CalibrationStatus {
+  validationCode: number
+  expressions?: ExpressionScores
+  error: string | null
+}
 
 interface CalibrationScreenProps {
   playerName: string
   onCalibrated: (baseline: ExpressionScores) => void
   onCancel: () => void
-  // Testing/hook injection for samples
-  registerSampleReceiver?: (
-    fn: (scores: ExpressionScores, validationCode: number) => void
-  ) => () => void
+  registerStatusReceiver: (fn: (status: CalibrationStatus) => void) => () => void
 }
+
+type Stage = 'framing' | 'calibrating' | 'failed'
 
 export function CalibrationScreen({
   playerName,
   onCalibrated,
   onCancel,
-  registerSampleReceiver
+  registerStatusReceiver
 }: CalibrationScreenProps): React.JSX.Element {
-  const [secondsLeft, setSecondsLeft] = useState(8)
+  const [stage, setStage] = useState<Stage>('framing')
+  const [attempt, setAttempt] = useState(0)
   const [retriesLeft, setRetriesLeft] = useState(2)
-  const [error, setError] = useState<string | null>(null)
-  const [validationHint, setValidationHint] = useState<string>('Hold still and face the camera')
+  const [msLeft, setMsLeft] = useState(CALIBRATION_MS)
+  const [hint, setHint] = useState('Starting camera')
+  const [sdkError, setSdkError] = useState<string | null>(null)
+  const [failure, setFailure] = useState<string | null>(null)
 
-  const calibratorRef = useRef(createBaselineCalibrator({ durationMs: 8000, minValidRatio: 0.8 }))
+  // Keep the latest callbacks without restarting the attempt when the parent re-renders.
+  const onCalibratedRef = useRef(onCalibrated)
+  const registerRef = useRef(registerStatusReceiver)
+  useEffect(() => {
+    onCalibratedRef.current = onCalibrated
+    registerRef.current = registerStatusReceiver
+  })
 
   useEffect(() => {
-    calibratorRef.current = createBaselineCalibrator({ durationMs: 8000, minValidRatio: 0.8 })
+    const gate = createFramingGate({ requiredMs: 1000 })
+    const calibrator = createBaselineCalibrator({ durationMs: CALIBRATION_MS, minValidRatio: 0.8 })
+    let startedAt: number | null = null
+    let done = false
 
-    // Interval countdown
-    const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          const result = calibratorRef.current.finish()
-          if (result.ok) {
-            onCalibrated(result.baseline)
-          } else {
-            setError('Could not settle a clear baseline. Keep your face centered and still.')
-          }
-          return 0
+    const finish = (): void => {
+      if (done) return
+      done = true
+      const result = calibrator.finish()
+      if (result.ok) {
+        onCalibratedRef.current(result.baseline)
+      } else {
+        setFailure(describeCalibrationFailure(result))
+        setStage('failed')
+      }
+    }
+
+    const unregister = registerRef.current((status) => {
+      if (done) return
+      setHint(describeValidation(status.validationCode))
+      setSdkError(status.error)
+      const now = Date.now()
+      if (startedAt === null) {
+        if (gate.update(status.validationCode, now)) {
+          startedAt = now
+          setStage('calibrating')
         }
-        return prev - 1
-      })
-    }, 1000)
-
-    // Hook sample receiver if supplied
-    const unregister = registerSampleReceiver?.((scores, code) => {
-      calibratorRef.current.addSample(scores, code)
-      if (code === 0) setValidationHint('Face OK — learning resting face')
-      else if (code === 1) setValidationHint('No face detected — move into frame')
-      else setValidationHint('Hold still and look at the camera')
+        return
+      }
+      if (status.expressions) calibrator.addSample(status.expressions, status.validationCode)
     })
 
+    const ticker = setInterval(() => {
+      if (startedAt === null || done) return
+      const left = CALIBRATION_MS - (Date.now() - startedAt)
+      setMsLeft(Math.max(0, left))
+      if (left <= 0) finish()
+    }, 200)
+
     return () => {
-      clearInterval(timer)
-      unregister?.()
+      done = true
+      clearInterval(ticker)
+      unregister()
     }
-  }, [retriesLeft, onCalibrated, registerSampleReceiver])
+  }, [attempt])
 
   const handleRetry = (): void => {
-    if (retriesLeft > 0) {
-      setSecondsLeft(8)
-      setError(null)
-      setRetriesLeft((r) => r - 1)
-    } else {
-      onCancel()
-    }
+    setFailure(null)
+    setStage('framing')
+    setMsLeft(CALIBRATION_MS)
+    setRetriesLeft((r) => r - 1)
+    setAttempt((a) => a + 1)
   }
+
+  const secondsLeft = Math.ceil(msLeft / 1000)
 
   return (
     <div className="panel calibration-panel">
       <p className="muted">Calibrating Hot Seat: {playerName}</p>
-      <h1>{error ? 'Calibration Failed' : `Calibrating: ${secondsLeft}s`}</h1>
 
-      {!error ? (
+      {stage === 'framing' && (
         <>
+          <h1>Get in frame</h1>
+          <p className="validation">{hint}</p>
+          <p className="hint">Calibration starts once your face is clearly visible.</p>
+        </>
+      )}
+
+      {stage === 'calibrating' && (
+        <>
+          <h1>Calibrating: {secondsLeft}s</h1>
           <div className="countdown-ring">{secondsLeft}</div>
-          <p className="validation">{validationHint}</p>
+          <p className="validation">{hint}</p>
           <div className="progress-bar-container">
             <div
               className="progress-bar-fill"
-              style={{ width: `${((8 - secondsLeft) / 8) * 100}%` }}
+              style={{ width: `${((CALIBRATION_MS - msLeft) / CALIBRATION_MS) * 100}%` }}
             />
           </div>
           <p className="hint">Challengers, stay quiet while we learn the resting face.</p>
         </>
-      ) : (
+      )}
+
+      {stage === 'failed' && (
         <>
-          <p className="error">{error}</p>
+          <h1>Calibration Failed</h1>
+          <p className="error">{failure}</p>
           <div className="calibration-actions">
             {retriesLeft > 0 ? (
               <button type="button" className="primary-btn" onClick={handleRetry}>
@@ -101,6 +146,8 @@ export function CalibrationScreen({
           </div>
         </>
       )}
+
+      {sdkError && <p className="error">{sdkError}</p>}
     </div>
   )
 }

@@ -42,6 +42,8 @@ export interface CalibrationFailure {
   ok: false
   reason: 'insufficient_valid_samples' | 'no_samples'
   validRatio: number
+  sampleCount: number
+  validCount: number
 }
 
 export type CalibrationResult = CalibrationSuccess | CalibrationFailure
@@ -93,11 +95,17 @@ export function createBaselineCalibrator(options?: CalibratorOptions): {
     },
     finish(): CalibrationResult {
       if (totalSamples === 0) {
-        return { ok: false, reason: 'no_samples', validRatio: 0 }
+        return { ok: false, reason: 'no_samples', validRatio: 0, sampleCount: 0, validCount: 0 }
       }
       const validRatio = validSamples.length / totalSamples
       if (validRatio < minValidRatio) {
-        return { ok: false, reason: 'insufficient_valid_samples', validRatio }
+        return {
+          ok: false,
+          reason: 'insufficient_valid_samples',
+          validRatio,
+          sampleCount: totalSamples,
+          validCount: validSamples.length
+        }
       }
 
       const baseline = {} as ExpressionScores
