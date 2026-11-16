@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { emitSnapshot, sound } from '../audio/sound'
 import type { CueSnapshot } from '../audio/cues'
 import type { PlayerRanking } from '../game/sessionMachine'
+import { useFaceSource } from '../face/faceContext'
 import { Bug } from './Chrome'
 
 interface LeaderboardScreenProps {
@@ -17,6 +18,7 @@ export function LeaderboardScreen({
   onRematch,
   onNewSession
 }: LeaderboardScreenProps): React.JSX.Element {
+  const { demo } = useFaceSource()
   const winner = rankings[0]
 
   // Sound: a short winner sting once when the final card appears.
@@ -75,7 +77,7 @@ export function LeaderboardScreen({
           Play Rematch (Lap {lap + 1})
         </button>
         <button type="button" className="secondary-btn" onClick={onNewSession}>
-          New Session
+          {demo ? 'Back' : 'New Session'}
         </button>
       </div>
 
