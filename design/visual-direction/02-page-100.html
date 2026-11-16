@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Poker Face · 02 Page 100</title>
+<meta name="viewport" content="width=1320">
+<style>
+:root{
+  --k:#000; --w:#fff; --y:#ffff00; --c:#00ffff; --g:#00ff00; --m:#ff00ff; --r:#ff0000; --b:#0000ff; --dim:#8a8a8a;
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,"Lucida Console",monospace;
+  --ui:system-ui,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html{background:#222}
+body{margin:0;padding:40px 20px 80px;font-family:var(--ui);color:#e8e8e8}
+::selection{background:var(--y);color:var(--k)}
+:focus-visible{outline:4px solid var(--y);outline-offset:-4px}
+.intro{width:1280px;margin:0 auto 40px;display:grid;grid-template-columns:1.4fr 1fr;gap:40px}
+.intro h1{margin:0 0 12px;font:700 48px/1 var(--mono)}
+.intro p{margin:0 0 12px;line-height:1.5;font-size:16px;max-width:62ch;color:#cfcfcf}
+.intro dl{margin:0;display:grid;grid-template-columns:90px 1fr;gap:10px 14px;font-size:14px;line-height:1.45;color:#cfcfcf}
+.intro dt{color:#999;font-weight:700}.intro dd{margin:0}
+.sw{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-right:4px;border:1px solid #ffffff55}
+.label{width:1280px;margin:36px auto 10px;font:700 15px var(--ui);color:#999;letter-spacing:.04em}
+
+/* frame: 40 x 20 character cells of 32 x 40 px */
+.frame{position:relative;width:1280px;height:800px;margin:0 auto;overflow:hidden;background:var(--k);font:400 44px/40px var(--mono);color:var(--w);box-shadow:0 18px 40px rgba(0,0,0,.6)}
+.t{position:absolute;left:0;height:40px;white-space:pre;padding:0 32px;letter-spacing:.141em}
+.t span{letter-spacing:.141em}
+.t.bar{right:0;background:var(--b)}
+.t.dbl{font-size:88px;line-height:80px;height:80px}
+.t.dh{height:80px;line-height:40px;transform:scaleY(2);transform-origin:0 0}
+.y{color:var(--y)}.c{color:var(--c)}.g{color:var(--g)}.m{color:var(--m)}.rd{color:var(--r)}.kk{color:var(--k)}.w{color:var(--w)}
+.bgy{background:var(--y)}.bgr{background:var(--r)}.bgc{background:var(--c)}.bgg{background:var(--g)}.bgm{background:var(--m)}.bgb{background:var(--b)}
+.at{position:absolute}
+svg{display:block}
+.cam{position:absolute;right:24px;bottom:84px;width:240px;height:135px;background:#000;border:4px solid var(--w);overflow:hidden}
+.cam svg{position:absolute;inset:0}
+.cam b{position:absolute;left:8px;top:4px;font:700 14px var(--ui);color:var(--c);letter-spacing:.06em}
+.cam i{position:absolute;right:8px;top:8px;width:10px;height:10px;background:var(--r)}
+.fast{position:absolute;left:0;right:0;bottom:0;height:40px;display:grid;grid-template-columns:repeat(4,1fr)}
+.fast button{font:700 28px/40px var(--mono);border:0;border-radius:0;color:var(--k);cursor:pointer;text-transform:uppercase;padding:0}
+.fast button:hover{filter:brightness(1.18)}
+.fast .fr{background:var(--r)}.fast .fg{background:var(--g)}.fast .fy{background:var(--y)}.fast .fc{background:var(--c)}
+.fast .stat{grid-column:1/-1;background:var(--b);color:var(--w);font:400 28px/40px var(--mono);padding:0 32px;white-space:pre}
+.inp{position:absolute;left:704px;top:520px;width:512px;height:48px;background:var(--b);color:var(--w);border:0;font:400 40px var(--mono);padding:0 16px;caret-color:var(--y);border-radius:0}
+.inp::placeholder{color:#b8b8ff}
+.blink{animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.flash{animation:bl 1.4s steps(1) infinite}
+.cell-row{position:absolute;display:flex;gap:4px}
+.cell-row i{display:block;width:28px;height:36px;background:#1d1d1d}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<header class="intro">
+  <div>
+    <h1>02 · Page 100</h1>
+    <p>Poker Face as a teletext page: pure black, seven flat colours, a fixed 40 × 20 character grid, and nothing curved. Players are lines on a page, the countdown is a subpage number, and the bottom of every screen carries the four colour keys, so the buttons are always where the room expects them. The mosaic "straight face" is the game's one character: its mouth is a flat bar and bends into a smile the instant a crack lands.</p>
+    <p>Tradeoff: the highest contrast and the most readable from across the room, with a witty, nostalgic voice that suits a party of mixed ages; hardest to extend (everything must snap to the grid) and the least "premium". Motion is deliberately cheap and instant.</p>
+  </div>
+  <dl>
+    <dt>Palette</dt><dd><span class="sw" style="background:#000"></span>black <span class="sw" style="background:#fff"></span>white <span class="sw" style="background:#ffff00"></span>yellow <span class="sw" style="background:#00ffff"></span>cyan <span class="sw" style="background:#00ff00"></span>green <span class="sw" style="background:#ff00ff"></span>magenta <span class="sw" style="background:#ff0000"></span>red <span class="sw" style="background:#0000ff"></span>blue (fills only)</dd>
+    <dt>Type</dt><dd>One monospace on a 32 × 40 px cell (Cascadia Mono here; ship a self-hosted pixel/teletext face). Double-height and double-size rows for headings; block digits built from cells.</dd>
+    <dt>Motion</dt><dd>Hard swaps only, locked to the cell grid. A crack flips the whole band to red and bends the mosaic mouth; one 1 Hz steady/flash cell blink; no easing anywhere.</dd>
+    <dt>Sound</dt><dd>Square-wave bleeps: one per countdown subpage, a two-note drop plus a quick arpeggio on a crack, a click on each colour key.</dd>
+    <dt>Roll</dt><dd>Challenger from the dice (teletext weather mosaic), fused with the product.</dd>
+  </dl>
+</header>
+
+<!-- 1 LOBBY -->
+<div class="label">1 · Lobby</div>
+<section class="frame" aria-label="Lobby">
+  <div class="t bar" style="top:0"><span class="w">P101 </span><span class="y">POKER FACE</span><span class="w">          LOBBY</span></div>
+  <div class="t dbl y" style="top:80px"><h2 style="margin:0;font:inherit">POKER FACE</h2></div>
+  <div class="t w" style="top:200px">ONE OF YOU HOLDS</div>
+  <div class="t w" style="top:240px">A STRAIGHT FACE</div>
+  <div class="t w" style="top:280px">FOR 60 SECONDS.</div>
+  <div class="t c" style="top:320px">THE REST TRY TO</div>
+  <div class="t c" style="top:360px">MAKE THEM CRACK.</div>
+  <svg class="at" style="left:64px;top:450px" data-art="neutral" data-cell="24" data-color="#ffff00" role="img" aria-label="Mosaic face with a straight mouth"></svg>
+  <div class="t c" style="left:672px;top:160px">WHO'S PLAYING?</div>
+  <ol style="list-style:none;margin:0;padding:0">
+    <li class="t rd" style="left:672px;top:200px">1 MAYA</li>
+    <li class="t g" style="left:672px;top:240px">2 TOMÁS</li>
+    <li class="t y" style="left:672px;top:280px">3 PRIYA</li>
+    <li class="t m" style="left:672px;top:320px">4 JONAS</li>
+    <li class="t" style="left:672px;top:360px;color:#8a8a8a">5 ......</li>
+    <li class="t" style="left:672px;top:400px;color:#8a8a8a">6 ......</li>
+  </ol>
+  <div class="t w" style="left:672px;top:470px;font-size:40px">TYPE A NAME + ENTER</div>
+  <input class="inp" aria-label="Player name" placeholder="NAME">
+  <div class="t y" style="left:672px;top:590px;font-size:40px">4 OF 6 SEATS TAKEN</div>
+  <div class="t w" style="top:680px;font-size:40px;color:#fff">NOTHING IS RECORDED OR STORED.</div>
+  <div class="fast"><button class="fr" type="button">Remove</button><button class="fg" type="button">Start</button><button class="fy" type="button">Rules</button><button class="fc" type="button">Quit</button></div>
+</section>
+
+<!-- 2 CAL A -->
+<div class="label">2 · Calibration: Get in frame</div>
+<section class="frame" aria-label="Calibration, get in frame">
+  <div class="t bar" style="top:0"><span class="w">P120 </span><span class="y">POKER FACE</span><span class="w">          PLAYER 1/4</span></div>
+  <div class="t c" style="top:80px">MAYA, YOU'RE UP</div>
+  <div class="t dbl c" style="top:130px"><h2 style="margin:0;font:inherit">GET IN</h2></div>
+  <div class="t dbl c" style="top:210px"><h2 style="margin:0;font:inherit">FRAME</h2></div>
+  <div class="t y" style="top:330px">CAMERA SAYS:</div>
+  <div class="t bar" style="top:370px;right:auto;width:704px"><span class="w">MOVE A LITTLE CLOSER</span></div>
+  <svg class="at" style="left:776px;top:130px" data-art="guide" data-cell="16" data-color="#ffff00" role="img" aria-label="Frame guide for your face"></svg>
+  <div class="cam" aria-label="Camera preview placeholder">
+    <svg viewBox="0 0 232 127" aria-hidden="true"><ellipse cx="116" cy="64" rx="28" ry="38" fill="none" stroke="#ffff00" stroke-width="3" stroke-dasharray="8 6"/></svg><b>CAMERA</b><i></i>
+  </div>
+  <div class="fast"><div class="stat">READING: FACE POSITION ONLY</div></div>
+</section>
+
+<!-- 3 CAL B -->
+<div class="label">3 · Calibration: countdown</div>
+<section class="frame" aria-label="Calibration countdown">
+  <div class="t bar" style="top:0"><span class="w">P121 </span><span class="y">POKER FACE</span><span class="w">          SUBPAGE 5/8</span></div>
+  <div class="t y" style="top:80px;left:0;right:0;text-align:center">HOLD YOUR RESTING FACE</div>
+  <svg class="at" style="left:520px;top:150px" data-digits="5" data-cell="48" data-color="#ffffff" role="timer" aria-label="5 seconds"></svg>
+  <div class="cell-row" style="left:396px;top:540px" aria-hidden="true">
+    <i style="background:#0ff;width:56px"></i><i style="background:#0ff;width:56px"></i><i style="background:#0ff;width:56px"></i><i style="background:#0ff;width:56px"></i><i style="background:#0ff;width:56px"></i><i style="width:56px"></i><i style="width:56px"></i><i style="width:56px"></i>
+  </div>
+  <div class="t w" style="top:620px;left:0;right:0;text-align:center;font-size:40px">LEARNING YOUR RESTING FACE.</div>
+  <div class="t w" style="top:660px;left:0;right:0;text-align:center;font-size:40px">NOTHING IS RECORDED.</div>
+  <div class="cam" style="right:24px;bottom:84px" aria-label="Camera preview placeholder">
+    <svg viewBox="0 0 232 127" aria-hidden="true"><ellipse cx="116" cy="64" rx="28" ry="38" fill="none" stroke="#fff" stroke-width="3"/></svg><b>CAMERA</b><i></i>
+  </div>
+  <div class="fast"><div class="stat">PLAYER 1/4 · MAYA · ROUND STARTS AT ZERO</div></div>
+</section>
+
+<!-- 4 LIVE -->
+<div class="label">4 · Live round, mid-crack</div>
+<section class="frame" aria-label="Live round, mid-crack">
+  <div class="t bar" style="top:0"><span class="w">P300 </span><span class="y">MAYA</span><span class="w">   IN THE HOT SEAT  1/4</span></div>
+  <div class="t c" style="top:60px;font-size:40px">CRACKS</div>
+  <svg class="at" style="left:64px;top:110px" data-digits="3" data-cell="28" data-color="#ffffff" role="img" aria-label="3 cracks"></svg>
+  <svg class="at" style="left:290px;top:130px" data-art="smile" data-cell="18" data-color="#ff0000" role="img" aria-label="Mosaic face, smiling: a crack"></svg>
+  <div class="t c" style="left:760px;top:60px;font-size:40px">TIME LEFT</div>
+  <svg class="at" style="left:760px;top:110px" data-digits="0:31" data-cell="14" data-color="#ffffff" role="timer" aria-label="31 seconds left"></svg>
+  <div class="t bgr kk flash" style="top:350px;right:0;height:80px;line-height:80px;font-size:88px;padding:0 32px" role="status"><span style="font-size:88px">CRACK! 0:29</span></div>
+  <div class="t w" style="top:442px;font-size:40px">THAT'S THREE. KEEP A STRAIGHT FACE.</div>
+  <div class="t c" style="top:500px;font-size:44px">ROOM MOOD</div>
+  <div class="t w" style="left:420px;top:506px;font-size:30px">AMBIENT FUN FOR THE ROOM. NOT A MEASUREMENT.</div>
+  <svg class="at" style="left:32px;top:556px" data-meter="19" role="meter" aria-label="Room mood, 19 of 38" aria-valuemin="0" aria-valuemax="38" aria-valuenow="19"></svg>
+  <div class="t w" style="top:600px;font-size:30px;color:#c8c8c8">QUIET ROOM ........................ LOUD ROOM</div>
+  <div class="cam" aria-label="Camera preview placeholder">
+    <svg viewBox="0 0 232 127" aria-hidden="true"><ellipse cx="116" cy="64" rx="28" ry="38" fill="none" stroke="#fff" stroke-width="3"/></svg><b>CAMERA</b><i></i>
+  </div>
+  <div class="fast"><div class="stat">FEWEST CRACKS WINS. LATER FIRST CRACK BREAKS A TIE.</div></div>
+</section>
+
+<div class="label">4b · Live round, paused (Back in frame)</div>
+<section class="frame" aria-label="Live round, paused">
+  <div class="t bar" style="top:0"><span class="w">P300 </span><span class="y">MAYA</span><span class="w">   PAUSED           1/4</span></div>
+  <div class="t c" style="top:60px;font-size:40px">CRACKS</div>
+  <svg class="at" style="left:64px;top:110px" data-digits="3" data-cell="28" data-color="#8a8a8a" role="img" aria-label="3 cracks"></svg>
+  <div class="t c" style="left:760px;top:60px;font-size:40px">TIME LEFT</div>
+  <svg class="at" style="left:760px;top:110px" data-digits="0:31" data-cell="14" data-color="#8a8a8a" role="img" aria-label="31 seconds left, paused"></svg>
+  <div class="t bgy kk" style="top:340px;right:0;height:160px;line-height:80px;font-size:88px;padding:0 32px" role="alert"><span style="font-size:88px">BACK IN FRAME</span><br><span style="font-size:48px;line-height:56px">CLOCK PAUSED UNTIL YOU ARE BACK.</span></div>
+  <div class="fast"><div class="stat">ROUND PAUSED</div></div>
+</section>
+
+<!-- 5 LEADERBOARD -->
+<div class="label">5 · Session leaderboard</div>
+<section class="frame" aria-label="Session leaderboard">
+  <div class="t bar" style="top:0"><span class="w">P400 </span><span class="y">POKER FACE</span><span class="w">          LAP 1 DONE</span></div>
+  <div class="t dbl y" style="top:60px"><h2 style="margin:0;font:inherit">FINAL TABLE</h2></div>
+  <div class="t c" style="top:170px;display:grid;grid-template-columns:96px 480px 224px 1fr;width:100%;font-size:40px;padding-right:32px"><span>#</span><span>PLAYER</span><span>CRACKS</span><span>FIRST CRACK</span></div>
+  <div class="t bgy kk" style="top:216px;right:0;height:80px;line-height:80px;display:grid;grid-template-columns:96px 480px 224px 1fr;font-size:72px;padding-right:32px"><span>1</span><span>PRIYA</span><span>0</span><span style="font-size:40px">HELD ALL 60 S</span></div>
+  <div class="t w" style="top:304px;right:0;display:grid;grid-template-columns:96px 480px 224px 1fr;padding-right:32px;font-size:48px"><span>2</span><span>JONAS</span><span>2</span><span style="font-size:40px">0:48</span></div>
+  <div class="t g" style="top:356px;right:0;display:grid;grid-template-columns:96px 480px 224px 1fr;padding-right:32px;font-size:48px"><span>3</span><span>TOMÁS</span><span>2</span><span style="font-size:40px">0:41</span></div>
+  <div class="t m" style="top:408px;right:0;display:grid;grid-template-columns:96px 480px 224px 1fr;padding-right:32px;font-size:48px"><span>4</span><span>MAYA</span><span>4</span><span style="font-size:40px">0:09</span></div>
+  <div class="t w" style="top:520px;font-size:34px">JONAS AND TOMÁS TIED ON 2 CRACKS.</div>
+  <div class="t w" style="top:560px;font-size:34px">JONAS HELD HIS STRAIGHT FACE LONGER.</div>
+  <div class="t c" style="top:640px;font-size:34px">NOTHING WAS RECORDED OR STORED.</div>
+  <div class="fast"><button class="fr" type="button">Replays</button><button class="fg" type="button">Rematch</button><button class="fy" type="button">New names</button><button class="fc" type="button">Quit</button></div>
+</section>
+
+<script>
+(function(){
+  var F={0:["01110","10001","10011","10101","11001","10001","01110"],1:["00100","01100","00100","00100","00100","00100","01110"],2:["01110","10001","00001","00110","01000","10000","11111"],3:["11110","00001","00001","01110","00001","00001","11110"],4:["00010","00110","01010","10010","11111","00010","00010"],5:["11111","10000","11110","00001","00001","10001","01110"],6:["00110","01000","10000","11110","10001","10001","01110"],7:["11111","00001","00010","00100","01000","01000","01000"],8:["01110","10001","10001","01110","10001","10001","01110"],9:["01110","10001","10001","01111","00001","00010","01100"],":":["0","0","1","0","1","0","0"]};
+  var ART={
+   neutral:["...........",".##.....##.",".##.....##.","...........","...........",".#########.","..........."],
+   smile:["...........",".##.....##.",".##.....##.","...........",".#.......#.","..#######..","..........."],
+   guide:(function(){var W=29,H=21,o=[];for(var y=0;y<H;y++){var r="";for(var x=0;x<W;x++){var cx=(x<4||x>=W-4),cy=(y<3||y>=H-3);var edge=(x===0||x===W-1||y===0||y===H-1);r+=(edge&&(cx&&y<4||cx&&y>=H-4||cy&&x<4||cy&&x>=W-4||(y===0||y===H-1)&&cx||(x===0||x===W-1)&&cy))?"#":"."}o.push(r)}return o})()
+  };
+  var NS="http://www.w3.org/2000/svg";
+  function draw(svg,rows,c,col,gap){
+    var w=0,h=rows.length;rows.forEach(function(r){w=Math.max(w,r.length)});
+    svg.setAttribute("width",w*c);svg.setAttribute("height",h*c);svg.setAttribute("viewBox","0 0 "+w*c+" "+h*c);
+    var s="";rows.forEach(function(r,y){for(var x=0;x<r.length;x++){if(r[x]==="#"||r[x]==="1"){s+='<rect x="'+(x*c)+'" y="'+(y*c)+'" width="'+(c-gap)+'" height="'+(c-gap)+'" fill="'+col+'"/>'}}});
+    svg.innerHTML=s;
+  }
+  document.querySelectorAll("[data-art]").forEach(function(el){
+    var rows=ART[el.dataset.art].map(function(r){return r.replace(/ /g,".")});
+    draw(el,rows,+el.dataset.cell,el.dataset.color,2);
+  });
+  document.querySelectorAll("[data-digits]").forEach(function(el){
+    var str=el.dataset.digits,rows=["","","","","","",""];
+    for(var i=0;i<str.length;i++){var g=F[str[i]];for(var y=0;y<7;y++){rows[y]+=g[y]+(i<str.length-1?"0":"")}}
+    draw(el,rows,+el.dataset.cell,el.dataset.color,Math.max(2,Math.round(+el.dataset.cell/10)));
+  });
+  document.querySelectorAll("[data-meter]").forEach(function(el){
+    var n=+el.dataset.meter,total=38,s="";
+    el.setAttribute("width",1216);el.setAttribute("height",36);el.setAttribute("viewBox","0 0 1216 36");
+    for(var i=0;i<total;i++){var on=i<n;var col=on?(i===n-1?"#ffffff":"#00ffff"):"#222";s+='<rect x="'+(i*32)+'" y="0" width="28" height="36" fill="'+col+'"/>'}
+    el.innerHTML=s;
+  });
+})();
+</script>
+</body>
+</html>

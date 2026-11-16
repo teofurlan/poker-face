@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "chosen": "01-fight-night.html",
+  "handoffs": {
+    "01-fight-night.html": {
+      "status": "in_progress",
+      "queued": false,
+      "sentAt": "2026-11-15T16:45:57.159Z",
+      "startedAt": "2026-11-15T16:46:23.189Z",
+      "implementedAt": null,
+      "note": "Branch feat/fight-night; tracked in odd/tasks/fight-night.md"
+    }
+  }
+}

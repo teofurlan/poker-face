@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Bug } from './Chrome'
 
 interface LobbyScreenProps {
   players: string[]
@@ -7,6 +8,8 @@ interface LobbyScreenProps {
   onStart: () => void
   onBackToCamera?: () => void
 }
+
+const MAX_SEATS = 6
 
 export function LobbyScreen({
   players,
@@ -36,63 +39,89 @@ export function LobbyScreen({
     }
   }
 
+  const openSeats = Array.from({ length: Math.max(0, MAX_SEATS - players.length) }, (_, i) => i)
+
   return (
     <div className="panel lobby-panel">
-      <h1>Player Lobby</h1>
-      <p className="muted">1 to 6 players in the hot seat, played in entry order.</p>
+      <div className="lobby-brand">
+        <h1 className="wordmark">
+          Poker <em>Face</em>
+        </h1>
+        <p className="lede">1 to 6 players in the hot seat, played in entry order.</p>
+      </div>
 
-      {players.length < 6 && (
-        <form className="lobby-form" onSubmit={handleAdd}>
-          <input
-            type="text"
-            autoFocus
-            placeholder="Enter player name..."
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-label="New player name"
-          />
-          <button type="submit" disabled={!name.trim()}>
-            Add Player
-          </button>
-        </form>
-      )}
+      <div className="card">
+        <h2 className="card-title">Tonight&apos;s card</h2>
 
-      {error && <p className="error">{error}</p>}
+        <div className="player-list" role="list">
+          {players.map((p, idx) => (
+            <div key={p} className="player-chip" role="listitem">
+              <span className="player-number">{idx + 1}</span>
+              <span className="player-name">{p}</span>
+              <button
+                type="button"
+                className="remove-btn"
+                onClick={() => onRemovePlayer(p)}
+                aria-label={`Remove ${p}`}
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M2 2 14 14M14 2 2 14" stroke="currentColor" strokeWidth="2.5" />
+                </svg>
+              </button>
+              <span className="player-corner" aria-hidden="true" />
+            </div>
+          ))}
+          {openSeats.map((i) => (
+            <div key={`open-${i}`} className="player-chip empty" aria-hidden="true">
+              <span className="player-number">{players.length + i + 1}</span>
+              <span className="player-name">Open seat</span>
+              <span />
+              <span className="player-corner" />
+            </div>
+          ))}
+        </div>
 
-      <div className="player-list" role="list">
-        {players.map((p, idx) => (
-          <div key={p} className="player-chip" role="listitem">
-            <span className="player-number">#{idx + 1}</span>
-            <span className="player-name">{p}</span>
-            <button
-              type="button"
-              className="remove-btn"
-              onClick={() => onRemovePlayer(p)}
-              aria-label={`Remove ${p}`}
-            >
-              ✕
+        {players.length < MAX_SEATS && (
+          <form className="lobby-form" onSubmit={handleAdd}>
+            <input
+              type="text"
+              autoFocus
+              placeholder="Enter player name..."
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-label="New player name"
+            />
+            <button type="submit" className="secondary-btn" disabled={!name.trim()}>
+              Add Player
             </button>
-          </div>
-        ))}
+          </form>
+        )}
+
+        {error && <p className="error">{error}</p>}
+
+        <div className="card-actions">
+          <button
+            type="button"
+            className="primary-btn"
+            disabled={players.length === 0}
+            onClick={onStart}
+          >
+            {players.length === 0
+              ? 'Add players to start'
+              : `Continue with ${players.length} player${players.length > 1 ? 's' : ''}`}
+          </button>
+          {onBackToCamera && (
+            <button type="button" className="secondary-btn" onClick={onBackToCamera}>
+              Change Camera
+            </button>
+          )}
+          <span className="seats">
+            {players.length} of {MAX_SEATS} seats taken
+          </span>
+        </div>
       </div>
 
-      <div className="lobby-actions">
-        <button
-          type="button"
-          className="primary-btn"
-          disabled={players.length === 0}
-          onClick={onStart}
-        >
-          {players.length === 0
-            ? 'Add players to start'
-            : `Continue with ${players.length} player${players.length > 1 ? 's' : ''}`}
-        </button>
-        {onBackToCamera && (
-          <button type="button" className="secondary-btn" onClick={onBackToCamera}>
-            Change Camera
-          </button>
-        )}
-      </div>
+      <Bug context="Silent hot seat · up to six players · one camera" />
     </div>
   )
 }

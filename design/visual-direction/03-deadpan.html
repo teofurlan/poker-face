@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Poker Face · 03 Deadpan</title>
+<meta name="viewport" content="width=1320">
+<style>
+:root{
+  --bone:#efe8da; --paper:#f8f4ea; --ink:#15130f; --graphite:#4a463e; --verm:#c22d17; --hair:#15130f;
+  --serif:"Palatino Linotype",Palatino,"Book Antiqua","Iowan Old Style",serif;
+  --ui:"Segoe UI",system-ui,sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box}
+html{background:#cfc7b6}
+body{margin:0;padding:40px 20px 80px;font-family:var(--serif);color:var(--ink)}
+::selection{background:var(--verm);color:var(--paper)}
+:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.intro{width:1280px;margin:0 auto 40px;display:grid;grid-template-columns:1.4fr 1fr;gap:40px}
+.intro h1{margin:0 0 12px;font:400 54px/1 var(--serif);font-style:italic}
+.intro p{margin:0 0 12px;line-height:1.5;font:16px/1.5 var(--ui);max-width:62ch;color:#2d2a24}
+.intro dl{margin:0;display:grid;grid-template-columns:90px 1fr;gap:10px 14px;font:14px/1.45 var(--ui);color:#2d2a24}
+.intro dt{color:#3d3a33;font-weight:700}.intro dd{margin:0}
+.sw{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:4px;border:1px solid #15130f66}
+.label{width:1280px;margin:36px auto 10px;font:700 15px var(--ui);color:#2d2a24;letter-spacing:.04em}
+
+.frame{position:relative;width:1280px;height:800px;margin:0 auto;overflow:hidden;background:var(--bone);box-shadow:0 18px 40px rgba(40,30,10,.25)}
+h2,h3,p{margin:0}
+.title{font:400 96px/1 var(--serif);letter-spacing:-.02em}
+.it{font-style:italic}
+.cap{font:600 22px/1.3 var(--ui);color:var(--graphite);letter-spacing:.01em}
+.plate{position:absolute;left:72px;bottom:44px;font:italic 22px/1.3 var(--serif);color:var(--graphite)}
+.btn{font:600 30px/1 var(--ui);padding:22px 44px;border:2px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;border-radius:2px;transition:background .25s var(--ease),color .25s var(--ease),transform .25s var(--ease)}
+.btn:hover{background:var(--verm);border-color:var(--verm);transform:translateY(-2px)}
+.btn.o{background:transparent;color:var(--ink)}
+.btn.o:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+input{font:italic 40px var(--serif);background:transparent;color:var(--ink);border:0;border-bottom:2px solid var(--ink);padding:10px 0;width:100%;border-radius:0}
+input::placeholder{color:#6a6458}
+input:focus-visible{outline-offset:6px}
+.cam{position:absolute;right:28px;bottom:28px;width:240px;height:135px;background:#d9d0bd;border:2px solid var(--ink);overflow:hidden}
+.cam svg{position:absolute;inset:0}
+.cam b{position:absolute;left:10px;top:8px;font:600 14px var(--ui);color:var(--ink);letter-spacing:.05em}
+.cam i{position:absolute;right:10px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--verm)}
+
+/* lobby */
+.lobby{position:absolute;inset:0;display:grid;grid-template-columns:560px 1fr;gap:96px;padding:76px 88px 0 88px}
+.lobby .lede{font:italic 40px/1.25 var(--serif);margin-top:36px;color:var(--graphite);max-width:14em}
+.book{padding-top:6px}
+.book h3{font:600 24px var(--ui);color:var(--graphite);margin-bottom:18px;letter-spacing:.01em}
+.book ol{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink)}
+.book li{display:grid;grid-template-columns:56px 1fr;align-items:baseline;padding:10px 0 8px;border-bottom:1px solid #15130f55;font:400 46px/1.15 var(--serif)}
+.book li span{font:600 20px var(--ui);color:var(--graphite)}
+.book li.empty{color:#6a6458;font-style:italic;font-size:34px}
+.add{margin-top:30px;display:grid;grid-template-columns:1fr auto;gap:28px;align-items:end}
+.add .btn{padding:16px 30px;font-size:26px}
+.go{display:flex;align-items:center;gap:28px;margin-top:34px}
+.go .cap{font-size:20px}
+
+/* calibration */
+.cal{position:absolute;inset:0}
+.cal h2{position:absolute;left:88px;top:150px;width:600px}
+.cal .hint{position:absolute;left:88px;top:470px;font:italic 38px/1.3 var(--serif);width:560px}
+.cal .hint span{display:block;font:600 22px var(--ui);color:var(--graphite);font-style:normal;margin-bottom:6px}
+.portrait{position:absolute;left:760px;top:80px;width:400px;height:520px;border:14px solid var(--ink);background:var(--paper)}
+.portrait svg{position:absolute;inset:0}
+.label-card{position:absolute;left:760px;top:624px;width:240px;font:italic 26px/1.3 var(--serif)}
+.label-card b{font-weight:400;font-style:normal;font-size:32px;display:block}
+.num{position:absolute;font:400 400px/.8 var(--serif);left:88px;top:250px;font-variant-numeric:lining-nums;letter-spacing:-.02em}
+.run{position:absolute;left:0;right:0;bottom:0;height:14px;background:transparent}
+.run i{display:block;height:3px;width:62.5%;background:var(--ink);margin-top:11px}
+
+/* live */
+.live .who{position:absolute;left:88px;top:72px;font:italic 40px/1.2 var(--serif)}
+.live .who span{display:block;font:600 22px var(--ui);color:var(--graphite);font-style:normal}
+.live .clock{position:absolute;right:88px;top:40px;font:400 210px/1 var(--serif);font-variant-numeric:lining-nums;letter-spacing:-.03em;text-align:right}
+.live .ck{position:absolute;left:88px;top:230px}
+.live .ck .n{font:400 300px/.8 var(--serif);font-variant-numeric:lining-nums;color:var(--verm)}
+.live .ck .cap{margin-bottom:14px}
+.tally{position:absolute;left:380px;top:300px}
+.tally .at{font:italic 34px/1.3 var(--serif);color:var(--verm);margin-top:22px;max-width:9em}
+.fracture{position:absolute;left:0;top:0;pointer-events:none}
+.fracture path{stroke-dasharray:1400;stroke-dashoffset:0;animation:draw .5s var(--ease)}
+@keyframes draw{from{stroke-dashoffset:1400}to{stroke-dashoffset:0}}
+.mood{position:absolute;left:88px;right:380px;bottom:70px}
+.mood .cap{font-size:24px;margin-bottom:20px}
+.mood .cap b{color:var(--ink);font-weight:600}
+.line{position:relative;height:30px}
+.line:before{content:"";position:absolute;left:0;right:0;top:14px;height:2px;background:var(--ink)}
+.line em{position:absolute;top:0;width:30px;height:30px;border-radius:50%;background:var(--ink);left:calc(58% - 15px)}
+.ends{display:flex;justify-content:space-between;margin-top:8px;font:italic 24px var(--serif);color:var(--graphite)}
+.veil{position:absolute;inset:0;background:rgba(239,232,218,.9);display:grid;place-items:center;text-align:center}
+.veil h2{font:400 96px/1 var(--serif);letter-spacing:-.02em}
+.veil p{font:italic 40px/1.3 var(--serif);color:var(--graphite);margin-top:22px}
+
+/* leaderboard */
+.lb{position:absolute;inset:0}
+.win{position:absolute;left:88px;top:84px;width:470px}
+.win h2{font:400 96px/1 var(--serif);letter-spacing:-.02em}
+.win .big{font:italic 40px/1.25 var(--serif);margin-top:26px}
+.win .cap{margin-top:26px;font-size:24px}
+.stand{position:absolute;left:640px;top:100px;width:552px}
+.stand h3{font:600 24px var(--ui);color:var(--graphite);margin-bottom:12px}
+.stand ol{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink)}
+.stand li{display:grid;grid-template-columns:56px 1fr 120px 130px;align-items:baseline;padding:14px 0 12px;border-bottom:1px solid #15130f55;font:400 44px/1.1 var(--serif)}
+.stand li span{font:600 22px var(--ui);color:var(--graphite)}
+.stand li .c{font:400 44px var(--serif);color:var(--ink);text-align:right;font-variant-numeric:lining-nums}
+.stand li .t{font:600 22px var(--ui);color:var(--graphite);text-align:right}
+.stand li.first{font-weight:700}
+.stand .note{font:italic 28px/1.3 var(--serif);color:var(--graphite);margin-top:28px}
+.acts{position:absolute;left:88px;bottom:104px;display:flex;gap:24px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="intro">
+  <div>
+    <h1>03 · Deadpan</h1>
+    <p>The funniest room is the quietest one. Poker Face becomes a very serious gallery: bone-coloured wall, black ink, a large literary serif, museum-label captions in italic. The hot seat is a portrait waiting to be hung; the crack counter is a hand-kept tally; the only vermilion in the whole product is a crack, and when one lands a single hairline fracture runs across the page. Everything else holds perfectly still, so the room can watch the face instead of the screen.</p>
+    <p>Tradeoff: the most distinctive and the most readable in a lit room or on a TV in daylight; the quietest, so it relies on the players to supply the noise. Less arcade energy than the other two, and the wittiest copy depends on staying deadpan.</p>
+  </div>
+  <dl>
+    <dt>Palette</dt><dd><span class="sw" style="background:#efe8da"></span>bone wall <span class="sw" style="background:#f8f4ea"></span>paper <span class="sw" style="background:#15130f"></span>ink <span class="sw" style="background:#4a463e"></span>graphite <span class="sw" style="background:#c22d17"></span>vermilion (cracks only)</dd>
+    <dt>Type</dt><dd>Palatino Linotype serif for headings, names and numerals; Segoe UI only for small museum-label captions. Ship a self-hosted text serif with true lining figures.</dd>
+    <dt>Motion</dt><dd>Almost none. A crack draws one vermilion hairline across the page in half a second and the counter's numeral inks in; the mood bead drifts along its line. Nothing else moves.</dd>
+    <dt>Sound</dt><dd>Quiet room tone with soft felt ticks for the countdown; a small ceramic "tink" on a crack; a single low gallery bell for the winner.</dd>
+    <dt>Roll</dt><dd>Grounded candidate from the audience's world (gallery and museum placards).</dd>
+  </dl>
+</header>
+
+<!-- 1 LOBBY -->
+<div class="label">1 · Lobby</div>
+<section class="frame" aria-label="Lobby">
+  <div class="lobby">
+    <div>
+      <h2 class="title">Poker<br>Face</h2>
+      <p class="lede">A study in not laughing. One of you sits still for a minute; the rest do their worst.</p>
+    </div>
+    <div class="book">
+      <h3>Who's sitting tonight</h3>
+      <ol>
+        <li><span>1</span>Maya</li>
+        <li><span>2</span>Tomás</li>
+        <li><span>3</span>Priya</li>
+        <li><span>4</span>Jonas</li>
+        <li class="empty"><span>5</span>an empty chair</li>
+        <li class="empty"><span>6</span>an empty chair</li>
+      </ol>
+      <form class="add" onsubmit="return false">
+        <input aria-label="Player name" placeholder="Add a name">
+        <button class="btn o" type="button">Add</button>
+      </form>
+      <div class="go"><button class="btn" type="button">Begin</button><p class="cap">4 of 6 chairs taken. Nothing is recorded or stored.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 CAL A -->
+<div class="label">2 · Calibration: Get in frame</div>
+<section class="frame" aria-label="Calibration, get in frame">
+  <div class="cal">
+    <h2 class="title">Please step into the frame.</h2>
+    <p class="hint"><span>The camera says</span>Move a little closer.</p>
+    <div class="portrait" aria-hidden="true">
+      <svg viewBox="0 0 372 492"><ellipse cx="186" cy="230" rx="104" ry="136" fill="none" stroke="#15130f" stroke-width="2" stroke-dasharray="3 9" stroke-linecap="round"/></svg>
+    </div>
+    <p class="label-card"><b>Maya</b>Portrait, not yet hung. Player 1 of 4.</p>
+    <div class="cam" aria-label="Camera preview placeholder">
+      <svg viewBox="0 0 236 131" aria-hidden="true"><ellipse cx="118" cy="66" rx="28" ry="38" fill="none" stroke="#15130f" stroke-width="2" stroke-dasharray="3 6" stroke-linecap="round"/></svg><b>CAMERA</b><i></i>
+    </div>
+  </div>
+</section>
+
+<!-- 3 CAL B -->
+<div class="label">3 · Calibration: countdown</div>
+<section class="frame" aria-label="Calibration countdown">
+  <div class="cal">
+    <h2 class="title" style="top:84px">Hold still.</h2>
+    <div class="num" role="timer" aria-label="5 seconds">5</div>
+    <p class="hint" style="left:600px;top:300px;width:520px"><span>Learning your resting face</span>This is the face every crack is measured against. Nothing is recorded.</p>
+    <div class="run" aria-hidden="true"><i></i></div>
+    <div class="cam" aria-label="Camera preview placeholder" style="bottom:44px">
+      <svg viewBox="0 0 236 131" aria-hidden="true"><ellipse cx="118" cy="66" rx="28" ry="38" fill="none" stroke="#15130f" stroke-width="2"/></svg><b>CAMERA</b><i></i>
+    </div>
+  </div>
+</section>
+
+<!-- 4 LIVE -->
+<div class="label">4 · Live round, mid-crack</div>
+<section class="frame live" aria-label="Live round, mid-crack">
+  <div class="who"><span>In the hot seat</span>Maya</div>
+  <div class="clock" role="timer" aria-label="31 seconds left">0:31</div>
+  <div class="ck"><p class="cap">Cracks</p><div class="n" aria-label="3 cracks">3</div></div>
+  <div class="tally">
+    <svg width="230" height="120" viewBox="0 0 230 120" role="img" aria-label="Three tally marks, the last one new" fill="none" stroke-linecap="round">
+      <path d="M20 14V106M70 14V106" stroke="#15130f" stroke-width="7"/>
+      <path d="M120 14V106" stroke="#c22d17" stroke-width="7"/>
+      <path d="M170 14V106" stroke="#15130f" stroke-width="7" stroke-dasharray="1 14" opacity=".35"/>
+    </svg>
+    <p class="at" role="status">A crack, at 0:29.</p>
+  </div>
+  <svg class="fracture" width="1280" height="800" viewBox="0 0 1280 800" aria-hidden="true"><path d="M742 0 L728 96 L760 190 L712 300 L752 410 L700 520 L736 640 L716 800" fill="none" stroke="#c22d17" stroke-width="3" stroke-linejoin="round"/></svg>
+  <div class="mood">
+    <p class="cap"><b>The room's mood.</b> Just for fun, not a measurement.</p>
+    <div class="line" role="meter" aria-label="Room mood, a little tense" aria-valuemin="0" aria-valuemax="100" aria-valuenow="58"><em></em></div>
+    <div class="ends"><span>Quiet room</span><span>Loud room</span></div>
+  </div>
+  <div class="cam" aria-label="Camera preview placeholder">
+    <svg viewBox="0 0 236 131" aria-hidden="true"><ellipse cx="118" cy="66" rx="28" ry="38" fill="none" stroke="#15130f" stroke-width="2"/></svg><b>CAMERA</b><i></i>
+  </div>
+</section>
+
+<div class="label">4b · Live round, paused (Back in frame)</div>
+<section class="frame live" aria-label="Live round, paused">
+  <div class="who"><span>In the hot seat</span>Maya</div>
+  <div class="clock" aria-label="31 seconds left, paused">0:31</div>
+  <div class="ck"><p class="cap">Cracks</p><div class="n" style="color:var(--ink)">3</div></div>
+  <div class="veil" role="alert"><div><h2>Back in frame, please.</h2><p>The clock is paused at 0:31.</p></div></div>
+</section>
+
+<!-- 5 LEADERBOARD -->
+<div class="label">5 · Session leaderboard</div>
+<section class="frame" aria-label="Session leaderboard">
+  <div class="lb">
+    <div class="win">
+      <h2>Priya</h2>
+      <p class="big">Held the full minute without a single crack.</p>
+      <p class="cap">First place. Fewest cracks wins.</p>
+    </div>
+    <div class="stand">
+      <h3>The standings</h3>
+      <ol>
+        <li class="first"><span>1</span>Priya<b class="c">0</b><b class="t">no crack</b></li>
+        <li><span>2</span>Jonas<b class="c">2</b><b class="t">first 0:48</b></li>
+        <li><span>3</span>Tomás<b class="c">2</b><b class="t">first 0:41</b></li>
+        <li><span>4</span>Maya<b class="c">4</b><b class="t">first 0:09</b></li>
+      </ol>
+      <p class="note">Jonas and Tomás tied on two cracks. Jonas kept a straight face longer before the first.</p>
+    </div>
+    <div class="acts"><button class="btn" type="button">Rematch</button><button class="btn o" type="button">Watch replays</button></div>
+    <p class="plate">Lap 1 of 4. Nothing was recorded or stored.</p>
+  </div>
+</section>
+</body>
+</html>
