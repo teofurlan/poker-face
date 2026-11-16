@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PlayerRoundResult } from '../game/sessionMachine'
 import { Bug } from './Chrome'
 
@@ -14,21 +14,21 @@ export function ReplayScreen({
   onNext
 }: ReplayScreenProps): React.JSX.Element {
   const [countdown, setCountdown] = useState(15)
+  // The parent passes a new onNext each render; keep the latest without restarting the timer.
+  const onNextRef = useRef(onNext)
+  useEffect(() => {
+    onNextRef.current = onNext
+  })
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          onNext()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
+    const timer = setInterval(() => setCountdown((prev) => Math.max(0, prev - 1)), 1000)
     return () => clearInterval(timer)
-  }, [onNext])
+  }, [])
+
+  // Advance from an effect, never from inside a state updater (that runs during render).
+  useEffect(() => {
+    if (countdown === 0) onNextRef.current()
+  }, [countdown])
 
   return (
     <div className="panel replay-panel">
