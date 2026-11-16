@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -58,6 +58,29 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => mainWindow?.show())
   mainWindow.on('closed', () => (mainWindow = null))
+
+  // Closing the window (Alt+F4, the close button) while the SDK runs aborted the process: the
+  // native SDK threw during teardown. Hold the close until the renderer has stopped the camera
+  // session, or 3 s at most, then close for real.
+  let cameraReleased = false
+  mainWindow.on('close', (event) => {
+    const win = mainWindow
+    if (cameraReleased || !win) return
+    event.preventDefault()
+    const finish = (): void => {
+      if (cameraReleased) return
+      cameraReleased = true
+      clearTimeout(timer)
+      ipcMain.removeListener('app:cameraReleased', onReleased)
+      if (!win.isDestroyed()) win.close()
+    }
+    const onReleased = (e: Electron.IpcMainEvent): void => {
+      if (e.sender === win.webContents) finish()
+    }
+    const timer = setTimeout(finish, 3000)
+    ipcMain.on('app:cameraReleased', onReleased)
+    win.webContents.send('app:closing')
+  })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     if (isHttps(details.url)) shell.openExternal(details.url)
