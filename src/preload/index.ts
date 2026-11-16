@@ -16,7 +16,14 @@ const api = {
   rememberedCamera: (cameras: CameraInfo[]): Promise<string | null> =>
     ipcRenderer.invoke('cameras:remembered', cameras),
   chooseCamera: (camera: CameraInfo): Promise<void> => ipcRenderer.invoke('camera:choose', camera),
-  forceExit: (): Promise<void> => ipcRenderer.invoke('face:forceExit')
+  forceExit: (): Promise<void> => ipcRenderer.invoke('face:forceExit'),
+  // The window is closing: stop the camera session, then confirm so the app can close safely.
+  onAppClosing: (listener: () => void): (() => void) => {
+    const handler = (): void => listener()
+    ipcRenderer.on('app:closing', handler)
+    return () => ipcRenderer.removeListener('app:closing', handler)
+  },
+  cameraReleased: (): void => ipcRenderer.send('app:cameraReleased')
 }
 
 export type PokerFaceApi = typeof api

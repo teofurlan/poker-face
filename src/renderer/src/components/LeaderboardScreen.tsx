@@ -1,3 +1,6 @@
+import { useEffect, useRef } from 'react'
+import { emitSnapshot, sound } from '../audio/sound'
+import type { CueSnapshot } from '../audio/cues'
 import type { PlayerRanking } from '../game/sessionMachine'
 import { Bug } from './Chrome'
 
@@ -15,6 +18,16 @@ export function LeaderboardScreen({
   onNewSession
 }: LeaderboardScreenProps): React.JSX.Element {
   const winner = rankings[0]
+
+  // Sound: a short winner sting once when the final card appears.
+  const cueRef = useRef<CueSnapshot | null>(null)
+  useEffect(() => {
+    emitSnapshot(cueRef, { phase: 'leaderboard' })
+    return () => {
+      cueRef.current = null
+      sound.stopAll()
+    }
+  }, [])
 
   return (
     <div className={`panel leaderboard-panel ${rankings.length > 4 ? 'dense' : ''}`}>

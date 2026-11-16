@@ -204,6 +204,29 @@ main {
   margin-left: auto;
 }
 
+.sound-toggle {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0.25rem var(--s-4);
+  background: var(--steel-2);
+  color: var(--light);
+  border-block: 2px solid var(--line);
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;
+  clip-path: none;
+}
+
+.sound-toggle[aria-pressed='false'] {
+  color: var(--dim);
+}
+
+.sound-toggle:hover:not(:disabled) {
+  background: var(--line);
+  transform: none;
+}
+
 .bug-context {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1397,7 +1420,6 @@ button:focus-visible {
 .leaderboard-row.rank-1 .col-cracks {
   font-size: 4.375rem;
 }
-
 
 .leaderboard-panel.dense h1 {
   font-size: 6rem;

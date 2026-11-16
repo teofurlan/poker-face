@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createCrackDetector, type ExpressionScores } from '../game/crackDetector'
 import { createPressureMeter, type VitalSample } from '../game/pressureMeter'
 import type { PlayerRoundResult } from '../game/sessionMachine'
+import { createRoundCues, sound } from '../audio/sound'
 import { Bug, TrendMark } from './Chrome'
 
 interface RoundScreenProps {
@@ -41,6 +42,9 @@ export function RoundScreen({
   const [pressureStatus, setPressureStatus] = useState<string>('settling')
   const [pressureTrend, setPressureTrend] = useState<string>('steady')
 
+  // Sound: reacts to existing state only (crack onset, last-10-seconds ticks, final bell).
+  const [roundCues] = useState(createRoundCues)
+
   const detectorRef = useRef(createCrackDetector({ baseline }))
   const pressureRef = useRef(createPressureMeter({ settleDurationMs: 20000 }))
 
@@ -48,8 +52,19 @@ export function RoundScreen({
   const faceLossMsRef = useRef<number>(0)
   const lastFaceLossStartRef = useRef<number | null>(null)
   const roundStartMsRef = useRef<number>(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const finishedRef = useRef(false)
+
+  // The parent passes new callbacks each render; keep the latest without restarting the round.
+  const onRoundFinishedRef = useRef(onRoundFinished)
+  const registerRoundEventsRef = useRef(registerRoundEvents)
+  useEffect(() => {
+    onRoundFinishedRef.current = onRoundFinished
+    registerRoundEventsRef.current = registerRoundEvents
+  })
 
   useEffect(() => {
+    finishedRef.current = false
     detectorRef.current.reset()
     pressureRef.current.reset()
     spokeEventsRef.current = []
@@ -74,23 +89,8 @@ export function RoundScreen({
         return // Paused clock while face is lost
       }
 
-      // Decrement round timer
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          const state = detectorRef.current.getState()
-          onRoundFinished({
-            totalCracks: state.totalCracks,
-            firstCrackMs: state.firstCrackMs,
-            cracks: state.cracks,
-            spokeEvents: [...spokeEventsRef.current],
-            faceLossTotalMs: faceLossMsRef.current,
-            voided: false
-          })
-          return 0
-        }
-        return prev - 1
-      })
+      // Decrement round timer (pure updater: the finish and the sound cues run in an effect below)
+      setSecondsLeft((prev) => Math.max(0, prev - 1))
 
       pressureRef.current.tick(elapsedTotal)
       const pState = pressureRef.current.getState()
@@ -100,10 +100,12 @@ export function RoundScreen({
       setPressureStatus(pState.status)
       setPressureTrend(pState.trend)
     }, 1000)
+    intervalRef.current = interval
 
-    const unregister = registerRoundEvents?.({
+    const unregister = registerRoundEventsRef.current?.({
       onExpression: (scores, ts) => {
         const res = detectorRef.current.processSample(scores, ts)
+        roundCues.update({ totalCracks: res.totalCracks, isCracking: res.isCracking })
         setCracksCount(res.totalCracks)
         setIsCracking(res.isCracking)
         setCurrentVariation(Math.round(res.currentVariation))
@@ -142,7 +144,38 @@ export function RoundScreen({
       clearInterval(interval)
       unregister?.()
     }
-  }, [baseline, onRoundFinished, registerRoundEvents])
+  }, [baseline, roundCues])
+
+  // Clock side effects run here, never inside the state updater (React may call that during render).
+  useEffect(() => {
+    roundCues.update({ secondsLeft })
+    if (secondsLeft > 0 || finishedRef.current) return
+    finishedRef.current = true
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    const state = detectorRef.current.getState()
+    onRoundFinishedRef.current({
+      totalCracks: state.totalCracks,
+      firstCrackMs: state.firstCrackMs,
+      cracks: state.cracks,
+      spokeEvents: [...spokeEventsRef.current],
+      faceLossTotalMs: faceLossMsRef.current,
+      voided: false
+    })
+  }, [secondsLeft, roundCues])
+
+  // Arena hush follows the pressure meter (room mood only); stop sound when leaving the round.
+  useEffect(() => {
+    sound.setAmbience(pressureStatus === 'settling' ? 0 : pressureScore / 100)
+  }, [pressureScore, pressureStatus])
+  useEffect(
+    () => () => {
+      // Let the final bell ring out after a natural finish; cut everything otherwise.
+      if (roundCues.isFinished()) sound.stopAmbience()
+      else sound.stopAll()
+      roundCues.reset()
+    },
+    [roundCues]
+  )
 
   const clock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`
   const SEGMENTS = 30

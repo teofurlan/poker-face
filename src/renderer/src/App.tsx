@@ -403,6 +403,18 @@ function App(): React.JSX.Element {
     window.api.keyStatus().then(({ source }) => setScreen(source ? 'camera' : 'key'))
   }, [])
 
+  // Stop any camera session before the window closes, then let the main process close it.
+  useEffect(
+    () =>
+      window.api.onAppClosing(() => {
+        face
+          .stop()
+          .catch(() => undefined)
+          .finally(() => window.api.cameraReleased())
+      }),
+    []
+  )
+
   return (
     <main>
       <div className="lamp" aria-hidden="true" />
