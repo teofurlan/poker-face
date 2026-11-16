@@ -1,6 +1,7 @@
 // Shared Fight Night chrome: the broadcast "bug" pinned to the bottom of every screen.
 // Purely presentational. Context text says where we are; the note says what the app promises.
 
+import { useFaceSource } from '../face/faceContext'
 import { setSoundMuted, useSoundMuted } from '../audio/sound'
 
 // Sound on/off, remembered across restarts. Icon shape + the word On/Off, never colour alone.
@@ -41,9 +42,11 @@ export function Bug({
   context,
   note = 'Nothing is recorded or stored'
 }: BugProps): React.JSX.Element {
+  const { demo } = useFaceSource()
   return (
     <footer className="bug">
       <b className="bug-brand">Poker Face</b>
+      {demo && <span className="bug-demo">Demo: recorded session</span>}
       {context && <span className="bug-context">{context}</span>}
       <span className="bug-note">{note}</span>
       <SoundToggle />

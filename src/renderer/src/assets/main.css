@@ -232,6 +232,18 @@ main {
   text-overflow: ellipsis;
 }
 
+/* Demo marker: text in a gold outline, never colour alone. */
+.bug-demo {
+  flex: none;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  padding: 0.1rem 0.6rem;
+  font-family: var(--display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 /* Screens */
 .panel {
   position: relative;
@@ -1473,8 +1485,36 @@ button:focus-visible {
   pointer-events: none;
 }
 
+.camera-preview-recorded {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
+  background: var(--steel);
+  color: var(--dim);
+  font-family: var(--display);
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .camera-preview[hidden] {
   display: none;
+}
+
+/* Demo intro: why the demo exists and what it is. */
+.demo-why {
+  max-width: 40rem;
+  margin: 0;
+  text-align: left;
+}
+
+.demo-why p {
+  margin: 0 0 var(--s-3);
+}
+
+.demo-why strong {
+  color: var(--gold);
 }
 
 /* Reduced motion: no drift, wipe, thud, edge or breathing. State still shows in words and shape. */

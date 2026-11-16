@@ -73,6 +73,10 @@ npm run dev
 
 Other commands: `npm test` runs the unit tests, `npm start` previews the production build, and `npm run build:win` builds an unsigned Windows installer in `dist/`.
 
+## Demo round (no camera, no key)
+
+On the API key screen or the camera screen, press **Try a demo round**. Read the short explanation and press **Start demo round**. It plays one full round (calibration, crack detection, pressure meter, replay, leaderboard) from a real session recorded during development with the same SDK (spike run of 2026-11-10, the developer's own face, used with consent). It needs no webcam, network or API key and spends no credits. Your own face is not used and nothing is recorded. Every demo screen is marked "Demo: recorded session" and the corner preview shows "Recorded session" instead of video. Live rounds are unchanged.
+
 ## Plan
 
 1. **Spike (1-2 days).** Get a free API key and run the Node SDK on Windows with a webcam. Measure:

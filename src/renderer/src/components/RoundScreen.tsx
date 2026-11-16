@@ -1,3 +1,4 @@
+import { roundClockMs } from '../game/roundClock'
 import { useEffect, useRef, useState } from 'react'
 import { createCrackDetector, type ExpressionScores } from '../game/crackDetector'
 import { createPressureMeter, type VitalSample } from '../game/pressureMeter'
@@ -102,9 +103,17 @@ export function RoundScreen({
     }, 1000)
     intervalRef.current = interval
 
+    // Events arrive with wall-clock timestamps; the round records them on its own clock.
+    const roundTime = (ts: number): number =>
+      roundClockMs(ts, {
+        startMs: roundStartMsRef.current,
+        pausedMs: faceLossMsRef.current,
+        pauseStartedAt: lastFaceLossStartRef.current
+      })
+
     const unregister = registerRoundEventsRef.current?.({
       onExpression: (scores, ts) => {
-        const res = detectorRef.current.processSample(scores, ts)
+        const res = detectorRef.current.processSample(scores, roundTime(ts))
         roundCues.update({ totalCracks: res.totalCracks, isCracking: res.isCracking })
         setCracksCount(res.totalCracks)
         setIsCracking(res.isCracking)
@@ -135,7 +144,7 @@ export function RoundScreen({
       },
       onTalking: (detected, ts) => {
         if (detected) {
-          spokeEventsRef.current.push(ts)
+          spokeEventsRef.current.push(roundTime(ts))
         }
       }
     })

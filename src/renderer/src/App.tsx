@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { face, listCameras } from './face/face'
+import { FaceContext, useFaceSource } from './face/faceContext'
 import type { FaceStatus } from './face/faceSession'
+import recording from './demo/recording.json'
+import { createRecordedFace, type Recording } from './demo/recordedFace'
+import { DemoIntroScreen } from './components/DemoIntroScreen'
 import { CalibrationScreen, type CalibrationStatus } from './components/CalibrationScreen'
 import { Bug } from './components/Chrome'
 import { CameraPreview } from './components/CameraPreview'
@@ -19,9 +23,27 @@ import {
 } from './game/sessionMachine'
 
 type Camera = { id: string; name: string }
-type Screen = 'loading' | 'key' | 'camera' | 'test_camera' | 'game'
+type Screen = 'loading' | 'key' | 'camera' | 'test_camera' | 'game' | 'demo_intro' | 'demo'
 
-function KeyScreen({ onSaved }: { onSaved: () => void }): React.JSX.Element {
+const DEMO_CAMERA: Camera = { id: 'demo', name: 'Recorded session' }
+const DEMO_PLAYER = 'Demo player'
+
+// A one-player session already past lobby and consent, for the demo.
+function createDemoSession(): ReturnType<typeof createSessionMachine> {
+  const machine = createSessionMachine()
+  machine.addPlayer(DEMO_PLAYER)
+  machine.proceedToConsent()
+  machine.confirmConsent()
+  return machine
+}
+
+function KeyScreen({
+  onSaved,
+  onDemo
+}: {
+  onSaved: () => void
+  onDemo: () => void
+}): React.JSX.Element {
   const [key, setKey] = useState('')
   const [error, setError] = useState<string | null>(null)
   const submit = async (e: React.FormEvent): Promise<void> => {
@@ -48,6 +70,9 @@ function KeyScreen({ onSaved }: { onSaved: () => void }): React.JSX.Element {
       <button type="submit" className="primary-btn">
         Save key
       </button>
+      <button type="button" className="secondary-btn" onClick={onDemo}>
+        Try a demo round
+      </button>
       <Bug context="Setup · API key" />
     </form>
   )
@@ -55,10 +80,12 @@ function KeyScreen({ onSaved }: { onSaved: () => void }): React.JSX.Element {
 
 function CameraScreen({
   onChosen,
-  onTest
+  onTest,
+  onDemo
 }: {
   onChosen: (camera: Camera) => void
   onTest: (camera: Camera) => void
+  onDemo: () => void
 }): React.JSX.Element {
   const [cameras, setCameras] = useState<Camera[] | null>(null)
   const [selected, setSelected] = useState<string>('')
@@ -87,6 +114,9 @@ function CameraScreen({
       <div className="panel">
         <h1>No camera found</h1>
         <p className="error">{error ?? 'Connect a camera and restart Poker Face.'}</p>
+        <button type="button" className="secondary-btn" onClick={onDemo}>
+          Try a demo round
+        </button>
         <Bug context="Setup · camera" />
       </div>
     )
@@ -118,6 +148,9 @@ function CameraScreen({
         >
           Test Camera
         </button>
+        <button type="button" className="secondary-btn" onClick={onDemo}>
+          Try a demo round
+        </button>
       </div>
       <Bug context="Setup · camera" />
     </div>
@@ -131,18 +164,19 @@ function TestCameraScreen({
   camera: Camera
   onBack: () => void
 }): React.JSX.Element {
+  const { source } = useFaceSource()
   const [status, setStatus] = useState<FaceStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    const off = face.onStatus(setStatus)
-    face.start(camera.id).then((r) => {
+    const off = source.onStatus(setStatus)
+    source.start(camera.id).then((r) => {
       if (!r.ok) setError(r.error)
     })
     return () => {
       off()
-      face.stop()
+      source.stop()
     }
-  }, [camera.id])
+  }, [camera.id, source])
   const faceSeen = status?.faceDetected
   return (
     <div className="panel">
@@ -166,7 +200,8 @@ function GameScreen({
   camera: Camera
   onChangeCamera: () => void
 }): React.JSX.Element {
-  const [session] = useState(() => createSessionMachine())
+  const { source: faceSource, demo } = useFaceSource()
+  const [session] = useState(() => (demo ? createDemoSession() : createSessionMachine()))
   const [sessionState, setSessionState] = useState<SessionState>(() => session.getState())
   const [cameraError, setCameraError] = useState<string | null>(null)
 
@@ -186,7 +221,7 @@ function GameScreen({
 
   // Subscribe to face:status events
   useEffect(() => {
-    const off = face.onStatus((status: FaceStatus) => {
+    const off = faceSource.onStatus((status: FaceStatus) => {
       const now = Date.now()
       statusReceiverRef.current?.({
         validationCode: status.validationCode,
@@ -212,18 +247,18 @@ function GameScreen({
 
     return () => {
       off()
-      face.stop()
+      faceSource.stop()
     }
-  }, [])
+  }, [faceSource])
 
   const startCamera = async (): Promise<void> => {
     setCameraError(null)
-    const result = await face.start(camera.id)
+    const result = await faceSource.start(camera.id)
     if (!result.ok) setCameraError(result.error)
   }
 
   const stopCamera = async (): Promise<void> => {
-    await face.stop()
+    await faceSource.stop()
   }
 
   // Lobby Phase
@@ -297,6 +332,10 @@ function GameScreen({
           onCancel={async () => {
             await stopCamera()
             setCameraError(null)
+            if (demo) {
+              onChangeCamera()
+              return
+            }
             session.resetToLobby()
             sync()
           }}
@@ -326,6 +365,10 @@ function GameScreen({
           }}
           onAbort={async () => {
             await stopCamera()
+            if (demo) {
+              onChangeCamera()
+              return
+            }
             session.resetToLobby()
             sync()
           }}
@@ -380,6 +423,10 @@ function GameScreen({
           sync()
         }}
         onNewSession={() => {
+          if (demo) {
+            onChangeCamera()
+            return
+          }
           session.resetToLobby()
           sync()
         }}
@@ -398,6 +445,14 @@ function GameScreen({
 function App(): React.JSX.Element {
   const [screen, setScreen] = useState<Screen>('loading')
   const [camera, setCamera] = useState<Camera | null>(null)
+  // Where "Back" from the demo returns to.
+  const [demoFrom, setDemoFrom] = useState<'key' | 'camera'>('key')
+  const recordedFace = useMemo(() => createRecordedFace({ recording: recording as Recording }), [])
+  const inDemo = screen === 'demo_intro' || screen === 'demo'
+  const faceContext = useMemo(
+    () => (inDemo ? { source: recordedFace, demo: true } : { source: face, demo: false }),
+    [inDemo, recordedFace]
+  )
 
   useEffect(() => {
     window.api.keyStatus().then(({ source }) => setScreen(source ? 'camera' : 'key'))
@@ -416,36 +471,56 @@ function App(): React.JSX.Element {
   )
 
   return (
-    <main>
-      <div className="lamp" aria-hidden="true" />
-      {screen === 'loading' && (
-        <div className="panel">
-          <h1>Loading…</h1>
-          <Bug />
-        </div>
-      )}
-      {screen === 'key' && <KeyScreen onSaved={() => setScreen('camera')} />}
-      {screen === 'camera' && (
-        <CameraScreen
-          onChosen={(c) => {
-            window.api.chooseCamera(c)
-            setCamera(c)
-            setScreen('game')
-          }}
-          onTest={(c) => {
-            window.api.chooseCamera(c)
-            setCamera(c)
-            setScreen('test_camera')
-          }}
-        />
-      )}
-      {screen === 'test_camera' && camera && (
-        <TestCameraScreen camera={camera} onBack={() => setScreen('camera')} />
-      )}
-      {screen === 'game' && camera && (
-        <GameScreen camera={camera} onChangeCamera={() => setScreen('camera')} />
-      )}
-    </main>
+    <FaceContext.Provider value={faceContext}>
+      <main>
+        <div className="lamp" aria-hidden="true" />
+        {screen === 'loading' && (
+          <div className="panel">
+            <h1>Loading…</h1>
+            <Bug />
+          </div>
+        )}
+        {screen === 'key' && (
+          <KeyScreen
+            onSaved={() => setScreen('camera')}
+            onDemo={() => {
+              setDemoFrom('key')
+              setScreen('demo_intro')
+            }}
+          />
+        )}
+        {screen === 'camera' && (
+          <CameraScreen
+            onDemo={() => {
+              setDemoFrom('camera')
+              setScreen('demo_intro')
+            }}
+            onChosen={(c) => {
+              window.api.chooseCamera(c)
+              setCamera(c)
+              setScreen('game')
+            }}
+            onTest={(c) => {
+              window.api.chooseCamera(c)
+              setCamera(c)
+              setScreen('test_camera')
+            }}
+          />
+        )}
+        {screen === 'test_camera' && camera && (
+          <TestCameraScreen camera={camera} onBack={() => setScreen('camera')} />
+        )}
+        {screen === 'game' && camera && (
+          <GameScreen camera={camera} onChangeCamera={() => setScreen('camera')} />
+        )}
+        {screen === 'demo_intro' && (
+          <DemoIntroScreen onStart={() => setScreen('demo')} onBack={() => setScreen(demoFrom)} />
+        )}
+        {screen === 'demo' && (
+          <GameScreen camera={DEMO_CAMERA} onChangeCamera={() => setScreen(demoFrom)} />
+        )}
+      </main>
+    </FaceContext.Provider>
   )
 }
 
