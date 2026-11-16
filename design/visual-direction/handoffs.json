@@ -3,12 +3,12 @@
   "chosen": "01-fight-night.html",
   "handoffs": {
     "01-fight-night.html": {
-      "status": "in_progress",
+      "status": "implemented",
       "queued": false,
       "sentAt": "2026-11-15T16:45:57.159Z",
       "startedAt": "2026-11-15T16:46:23.189Z",
-      "implementedAt": null,
-      "note": "Branch feat/fight-night; tracked in odd/tasks/fight-night.md"
+      "implementedAt": "2026-11-16T01:35:20.410Z",
+      "note": "Implemented on feat/fight-night (1927bfc, 1b9c006); owner visual review pending. Deviations: lobby stripes all blue (red only for cracks), errors use a neutral Problem box."
     }
   }
 }

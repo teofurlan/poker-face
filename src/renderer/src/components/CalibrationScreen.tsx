@@ -5,6 +5,8 @@ import {
   describeCalibrationFailure,
   describeValidation
 } from '../game/calibration'
+import { emitSnapshot, sound } from '../audio/sound'
+import type { CueSnapshot } from '../audio/cues'
 import { Bug } from './Chrome'
 
 const CALIBRATION_MS = 8000
@@ -104,6 +106,22 @@ export function CalibrationScreen({
   }
 
   const secondsLeft = Math.ceil(msLeft / 1000)
+
+  // Sound: a bell for each countdown second. Silence while framing.
+  const cueRef = useRef<CueSnapshot | null>(null)
+  useEffect(() => {
+    emitSnapshot(cueRef, {
+      phase: 'calibration',
+      calSecondsLeft: stage === 'calibrating' ? secondsLeft : null
+    })
+  }, [stage, secondsLeft])
+  useEffect(
+    () => () => {
+      cueRef.current = null
+      sound.stopAll()
+    },
+    []
+  )
 
   if (cameraError) {
     return (
