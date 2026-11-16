@@ -1,8 +1,24 @@
-import { useEffect, useState } from 'react'
-import type { FaceStatus } from '../../preload'
+import { useEffect, useRef, useState } from 'react'
+import { face, listCameras } from './face/face'
+import type { FaceStatus } from './face/faceSession'
+import { CalibrationScreen, type CalibrationStatus } from './components/CalibrationScreen'
+import { CameraPreview } from './components/CameraPreview'
+import { ConsentScreen } from './components/ConsentScreen'
+import { LeaderboardScreen } from './components/LeaderboardScreen'
+import { LobbyScreen } from './components/LobbyScreen'
+import { ReadyPlayerScreen } from './components/ReadyPlayerScreen'
+import { ReplayScreen } from './components/ReplayScreen'
+import { RoundScreen } from './components/RoundScreen'
+import type { ExpressionScores } from './game/crackDetector'
+import type { VitalSample } from './game/pressureMeter'
+import {
+  createSessionMachine,
+  type PlayerRoundResult,
+  type SessionState
+} from './game/sessionMachine'
 
 type Camera = { id: string; name: string }
-type Screen = 'loading' | 'key' | 'camera' | 'live'
+type Screen = 'loading' | 'key' | 'camera' | 'test_camera' | 'game'
 
 function KeyScreen({ onSaved }: { onSaved: () => void }): React.JSX.Element {
   const [key, setKey] = useState('')
@@ -33,16 +49,20 @@ function KeyScreen({ onSaved }: { onSaved: () => void }): React.JSX.Element {
   )
 }
 
-function CameraScreen({ onChosen }: { onChosen: (camera: Camera) => void }): React.JSX.Element {
+function CameraScreen({
+  onChosen,
+  onTest
+}: {
+  onChosen: (camera: Camera) => void
+  onTest: (camera: Camera) => void
+}): React.JSX.Element {
   const [cameras, setCameras] = useState<Camera[] | null>(null)
   const [selected, setSelected] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    window.api
-      .listCameras()
-      .then((result) => {
-        const { cameras, selectedId } = result
-        setError(result.error ?? null)
+    listCameras()
+      .then(async (cameras) => {
+        const selectedId = await window.api.rememberedCamera(cameras)
         setCameras(cameras)
         setSelected(selectedId ?? cameras[0]?.id ?? '')
       })
@@ -70,44 +90,301 @@ function CameraScreen({ onChosen }: { onChosen: (camera: Camera) => void }): Rea
           </option>
         ))}
       </select>
-      <button disabled={!chosen} onClick={() => chosen && onChosen(chosen)}>
-        Use this camera
-      </button>
+      <div className="lobby-actions">
+        <button
+          type="button"
+          className="primary-btn"
+          disabled={!chosen}
+          onClick={() => chosen && onChosen(chosen)}
+        >
+          Use for Game
+        </button>
+        <button
+          type="button"
+          className="secondary-btn"
+          disabled={!chosen}
+          onClick={() => chosen && onTest(chosen)}
+        >
+          Test Camera
+        </button>
+      </div>
     </div>
   )
 }
 
-function LiveScreen({ camera, onBack }: { camera: Camera; onBack: () => void }): React.JSX.Element {
+function TestCameraScreen({
+  camera,
+  onBack
+}: {
+  camera: Camera
+  onBack: () => void
+}): React.JSX.Element {
   const [status, setStatus] = useState<FaceStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    const off = window.api.onFaceStatus(setStatus)
-    window.api.startFace(camera.id).then((r) => {
+    const off = face.onStatus(setStatus)
+    face.start(camera.id).then((r) => {
       if (!r.ok) setError(r.error)
     })
     return () => {
       off()
-      window.api.stopFace()
+      face.stop()
     }
   }, [camera.id])
-  const face = status?.faceDetected
+  const faceSeen = status?.faceDetected
   return (
     <div className="panel">
       <p className="muted">{camera.name}</p>
-      <div className={`face ${face ? 'on' : 'off'}`}>{face ? 'FACE' : 'NO FACE'}</div>
+      <div className={`face ${faceSeen ? 'on' : 'off'}`}>{faceSeen ? 'FACE' : 'NO FACE'}</div>
       <p className="validation">{status?.validation ?? 'Starting camera'}</p>
       {(error ?? status?.error) && <p className="error">{error ?? status?.error}</p>}
-      <button onClick={onBack}>Stop</button>
+      <button type="button" onClick={onBack}>
+        Back
+      </button>
+      <CameraPreview />
     </div>
   )
+}
+
+function GameScreen({
+  camera,
+  onChangeCamera
+}: {
+  camera: Camera
+  onChangeCamera: () => void
+}): React.JSX.Element {
+  const [session] = useState(() => createSessionMachine())
+  const [sessionState, setSessionState] = useState<SessionState>(() => session.getState())
+  const [cameraError, setCameraError] = useState<string | null>(null)
+
+  // Active status listener refs
+  const statusReceiverRef = useRef<((status: CalibrationStatus) => void) | null>(null)
+  const roundEventsRef = useRef<{
+    onExpression: (scores: ExpressionScores, ts: number) => void
+    onPulse: (sample: VitalSample, ts: number) => void
+    onBreathing: (sample: VitalSample, ts: number) => void
+    onValidation: (code: number, ts: number) => void
+    onTalking: (detected: boolean, ts: number) => void
+  } | null>(null)
+
+  const sync = (): void => {
+    setSessionState(session.getState())
+  }
+
+  // Subscribe to face:status events
+  useEffect(() => {
+    const off = face.onStatus((status: FaceStatus) => {
+      const now = Date.now()
+      statusReceiverRef.current?.({
+        validationCode: status.validationCode,
+        expressions: status.expressions as ExpressionScores | undefined,
+        error: status.error
+      })
+      if (status.expressions) {
+        roundEventsRef.current?.onExpression(status.expressions as ExpressionScores, now)
+      }
+      if (status.pulse) {
+        roundEventsRef.current?.onPulse(status.pulse, now)
+      }
+      if (status.breathing) {
+        roundEventsRef.current?.onBreathing(status.breathing, now)
+      }
+      if (status.validationCode !== undefined) {
+        roundEventsRef.current?.onValidation(status.validationCode, now)
+      }
+      if (status.talking !== undefined) {
+        roundEventsRef.current?.onTalking(status.talking, now)
+      }
+    })
+
+    return () => {
+      off()
+      face.stop()
+    }
+  }, [])
+
+  const startCamera = async (): Promise<void> => {
+    setCameraError(null)
+    const result = await face.start(camera.id)
+    if (!result.ok) setCameraError(result.error)
+  }
+
+  const stopCamera = async (): Promise<void> => {
+    await face.stop()
+  }
+
+  // Lobby Phase
+  if (sessionState.phase === 'lobby') {
+    return (
+      <LobbyScreen
+        players={sessionState.players}
+        onAddPlayer={(name) => {
+          const ok = session.addPlayer(name)
+          if (ok) sync()
+          return ok
+        }}
+        onRemovePlayer={(name) => {
+          session.removePlayer(name)
+          sync()
+        }}
+        onStart={() => {
+          session.proceedToConsent()
+          sync()
+        }}
+        onBackToCamera={onChangeCamera}
+      />
+    )
+  }
+
+  // Consent Phase
+  if (sessionState.phase === 'consent') {
+    return (
+      <ConsentScreen
+        players={sessionState.players}
+        onConfirmConsent={() => {
+          session.confirmConsent()
+          sync()
+        }}
+        onBackToLobby={() => {
+          session.resetToLobby()
+          sync()
+        }}
+      />
+    )
+  }
+
+  // Ready Player Phase
+  if (sessionState.phase === 'ready_player') {
+    return (
+      <ReadyPlayerScreen
+        playerName={sessionState.currentPlayerName ?? 'Player'}
+        playerIndex={sessionState.currentPlayerIndex}
+        totalPlayers={sessionState.players.length}
+        lap={sessionState.lap}
+        onStartCalibration={async () => {
+          await startCamera()
+          session.startCalibration()
+          sync()
+        }}
+      />
+    )
+  }
+
+  // Calibration Phase
+  if (sessionState.phase === 'calibrating') {
+    return (
+      <>
+        <CalibrationScreen
+          playerName={sessionState.currentPlayerName ?? 'Player'}
+          onCalibrated={(baseline) => {
+            session.calibrationCompleted(baseline)
+            sync()
+          }}
+          cameraError={cameraError}
+          onCancel={async () => {
+            await stopCamera()
+            setCameraError(null)
+            session.resetToLobby()
+            sync()
+          }}
+          registerStatusReceiver={(fn) => {
+            statusReceiverRef.current = fn
+            return () => {
+              statusReceiverRef.current = null
+            }
+          }}
+        />
+        <CameraPreview />
+      </>
+    )
+  }
+
+  // Round Phase
+  if (sessionState.phase === 'round' && sessionState.currentBaseline) {
+    return (
+      <>
+        <RoundScreen
+          playerName={sessionState.currentPlayerName ?? 'Player'}
+          baseline={sessionState.currentBaseline}
+          onRoundFinished={async (result) => {
+            await stopCamera()
+            session.roundCompleted(result)
+            sync()
+          }}
+          onAbort={async () => {
+            await stopCamera()
+            session.resetToLobby()
+            sync()
+          }}
+          registerRoundEvents={(handlers) => {
+            roundEventsRef.current = handlers
+            return () => {
+              roundEventsRef.current = null
+            }
+          }}
+        />
+        <CameraPreview />
+      </>
+    )
+  }
+
+  // Replay Phase
+  if (sessionState.phase === 'replay') {
+    const currentResult: PlayerRoundResult = sessionState.results[
+      sessionState.currentPlayerName ?? ''
+    ] ?? {
+      playerName: sessionState.currentPlayerName ?? 'Player',
+      totalCracks: 0,
+      firstCrackMs: null,
+      cracks: [],
+      spokeEvents: [],
+      faceLossTotalMs: 0,
+      voided: false
+    }
+
+    const isLast = sessionState.currentPlayerIndex + 1 >= sessionState.players.length
+
+    return (
+      <ReplayScreen
+        result={currentResult}
+        isLastPlayerInLap={isLast}
+        onNext={() => {
+          session.nextPlayerOrLeaderboard()
+          sync()
+        }}
+      />
+    )
+  }
+
+  // Leaderboard Phase
+  if (sessionState.phase === 'leaderboard') {
+    return (
+      <LeaderboardScreen
+        lap={sessionState.lap}
+        rankings={session.getRankings()}
+        onRematch={() => {
+          session.rematch()
+          sync()
+        }}
+        onNewSession={() => {
+          session.resetToLobby()
+          sync()
+        }}
+      />
+    )
+  }
+
+  return <div className="panel">Loading game…</div>
 }
 
 function App(): React.JSX.Element {
   const [screen, setScreen] = useState<Screen>('loading')
   const [camera, setCamera] = useState<Camera | null>(null)
+
   useEffect(() => {
     window.api.keyStatus().then(({ source }) => setScreen(source ? 'camera' : 'key'))
   }, [])
+
   return (
     <main>
       <header>Poker Face</header>
@@ -118,12 +395,20 @@ function App(): React.JSX.Element {
           onChosen={(c) => {
             window.api.chooseCamera(c)
             setCamera(c)
-            setScreen('live')
+            setScreen('game')
+          }}
+          onTest={(c) => {
+            window.api.chooseCamera(c)
+            setCamera(c)
+            setScreen('test_camera')
           }}
         />
       )}
-      {screen === 'live' && camera && (
-        <LiveScreen camera={camera} onBack={() => setScreen('camera')} />
+      {screen === 'test_camera' && camera && (
+        <TestCameraScreen camera={camera} onBack={() => setScreen('camera')} />
+      )}
+      {screen === 'game' && camera && (
+        <GameScreen camera={camera} onChangeCamera={() => setScreen('camera')} />
       )}
     </main>
   )

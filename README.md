@@ -16,10 +16,10 @@ A party game for the [DEV Presage SmartSpectra SDK Challenge](https://dev.to/cha
 ## Why this framing
 
 - **Lie detection is already done with this SDK:**
-  - *Vital Verdict* ([Devpost](https://devpost.com/software/vital-verdict)) is an Among Us-like game where players see each other's pulse. It uses Presage SmartSpectra.
-  - *Trust Me Bro* ([Devpost](https://devpost.com/software/trust-me-bro-i74zut), HackBrown 2026) is a bluffing game with a "lie-detecting hat."
+  - _Vital Verdict_ ([Devpost](https://devpost.com/software/vital-verdict)) is an Among Us-like game where players see each other's pulse. It uses Presage SmartSpectra.
+  - _Trust Me Bro_ ([Devpost](https://devpost.com/software/trust-me-bro-i74zut), HackBrown 2026) is a bluffing game with a "lie-detecting hat."
   - The Devpost pages returned 403, so their prizes are unverified.
-- **Lie detection is sensitive for this sponsor.** Presage was selected for the DoD/DIU *Polygraph+* credibility-assessment prototype ([DIU, 2024](https://www.diu.mil/latest/department-of-defense-defense-innovation-unit-announce-polygraph-effort-to)), and physiological lie detection is not reliable.
+- **Lie detection is sensitive for this sponsor.** Presage was selected for the DoD/DIU _Polygraph+_ credibility-assessment prototype ([DIU, 2024](https://www.diu.mil/latest/department-of-defense-defense-innovation-unit-announce-polygraph-effort-to)), and physiological lie detection is not reliable.
 - **It matches what the SDK actually does.** Pulse is a 12 s average, too slow to react to a single answer, while expressions, blinks and talking are fast.
 - **The contest has no game like this yet.** On 2026-11-06 the DEV API returned about 17 submissions (6 empty). They cluster around:
   - calm/stress wellness and breathing visuals: Aura, Glassbreath, Presage Sense, CodeCalm, The Living Darkroom;
@@ -39,7 +39,7 @@ A party game for the [DEV Presage SmartSpectra SDK Challenge](https://dev.to/cha
   - a Consent and Data Handling section.
 - **Prohibited:** diagnosis or treatment claims, medical decision-making, and covert or non-consensual monitoring ([contest rules](https://dev.to/page/presage-2026-11-04-contest-rules)).
 - **Judging criteria:** use of the technology, usability and user experience, and originality. Ties go to the most positive reactions on the DEV post.
-- **Target categories:** *Most Creative or Delightful Use* first; the overall winner spots also apply.
+- **Target categories:** _Most Creative or Delightful Use_ first; the overall winner spots also apply.
 
 ## SDK facts that shape the design
 
@@ -82,6 +82,7 @@ Other commands: `npm test` runs the unit tests, `npm start` previews the product
    - how pulse and breathing behave over a 60-90 s round.
 
    Go/no-go: crack events must arrive in under about 1 s.
+
 2. **Game design (half a day).** Define the round length, the crack thresholds relative to a per-player baseline (calibrated in the first seconds), scoring, the number of players, and the screen layout so the room can see it.
 3. **Core loop (days 3-7).** Build the consent screen, calibration, a live round with the crack meter and pressure meter, the replay timeline, and a leaderboard for the session.
 4. **Polish (days 8-11).** Add sound, animations, a sample-recording mode that runs without a camera or key (the strongest entries have one), and installers or simple setup.
