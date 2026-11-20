@@ -1,14 +1,12 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
-import { fileURLToPath, pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { bindSmartSpectraIpc } from '@smartspectra/node-sdk/main'
+import { createAppUrlMatcher } from './appUrl'
 import { registerIpc } from './ipc'
 
 let mainWindow: BrowserWindow | null = null
-
-const rendererIndexUrl = pathToFileURL(join(__dirname, '../renderer/index.html')).href
 
 function isHttps(url: string): boolean {
   try {
@@ -18,22 +16,11 @@ function isHttps(url: string): boolean {
   }
 }
 
-// The app's own page: the dev server origin in development, the packaged index.html otherwise.
-export function isAppUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url)
-    const devUrl = process.env['ELECTRON_RENDERER_URL']
-    if (is.dev && devUrl) return parsed.origin === new URL(devUrl).origin
-    if (parsed.protocol !== 'file:') return false
-    const href = pathToFileURL(fileURLToPath(parsed)).href
-    // Windows paths are case-insensitive and Chromium may report a different drive-letter case.
-    return process.platform === 'win32'
-      ? href.toLowerCase() === rendererIndexUrl.toLowerCase()
-      : href === rendererIndexUrl
-  } catch {
-    return false
-  }
-}
+export const isAppUrl = createAppUrlMatcher({
+  isDev: is.dev,
+  devUrl: process.env['ELECTRON_RENDERER_URL'],
+  rendererIndexPath: join(__dirname, '../renderer/index.html')
+})
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
