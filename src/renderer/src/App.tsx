@@ -179,7 +179,7 @@ function TestCameraScreen({
   }, [camera.id, source])
   const faceSeen = status?.faceDetected
   return (
-    <div className="panel">
+    <div className="panel test-camera-panel">
       <p className="muted">Testing camera: {camera.name}</p>
       <div className={`face ${faceSeen ? 'on' : 'off'}`}>{faceSeen ? 'FACE' : 'NO FACE'}</div>
       <p className="validation">{status?.validation ?? 'Starting camera'}</p>
@@ -204,6 +204,7 @@ function GameScreen({
   const [session] = useState(() => (demo ? createDemoSession() : createSessionMachine()))
   const [sessionState, setSessionState] = useState<SessionState>(() => session.getState())
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const cameraStartIdRef = useRef(0)
 
   // Active status listener refs
   const statusReceiverRef = useRef<((status: CalibrationStatus) => void) | null>(null)
@@ -252,12 +253,17 @@ function GameScreen({
   }, [faceSource])
 
   const startCamera = async (): Promise<void> => {
+    const startId = ++cameraStartIdRef.current
     setCameraError(null)
     const result = await faceSource.start(camera.id)
-    if (!result.ok) setCameraError(result.error)
+    if (!result.ok && cameraStartIdRef.current === startId) {
+      setCameraError(result.error)
+    }
   }
 
   const stopCamera = async (): Promise<void> => {
+    cameraStartIdRef.current += 1
+    setCameraError(null)
     await faceSource.stop()
   }
 
@@ -309,9 +315,18 @@ function GameScreen({
         playerIndex={sessionState.currentPlayerIndex}
         totalPlayers={sessionState.players.length}
         lap={sessionState.lap}
-        onStartCalibration={async () => {
-          await startCamera()
+        backLabel={demo ? 'Back' : 'Back to Lobby'}
+        onStartCalibration={() => {
           session.startCalibration()
+          sync()
+          void startCamera()
+        }}
+        onBackToLobby={() => {
+          if (demo) {
+            onChangeCamera()
+            return
+          }
+          session.resetToLobby()
           sync()
         }}
       />
@@ -331,12 +346,7 @@ function GameScreen({
           cameraError={cameraError}
           onCancel={async () => {
             await stopCamera()
-            setCameraError(null)
-            if (demo) {
-              onChangeCamera()
-              return
-            }
-            session.resetToLobby()
+            session.cancelCalibration()
             sync()
           }}
           registerStatusReceiver={(fn) => {
