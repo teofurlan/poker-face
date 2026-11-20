@@ -79,4 +79,30 @@ describe('face', () => {
     await expect(face.start('cam-1')).resolves.toEqual({ ok: false, error: 'read failed' })
     expect(sdks).toHaveLength(0)
   })
+
+  it('shows preview during warm-up and cancels immediately on stop without creating an SDK', async () => {
+    const { face } = await import('./face')
+    const seenStreams: (MediaStream | null)[] = []
+    const off = face.onStream((s) => seenStreams.push(s))
+    try {
+      const startedAt = Date.now()
+      const starting = face.start('cam-1')
+      await vi.waitFor(() => expect(streams).toHaveLength(1))
+      expect(seenStreams.at(-1)).toBe(streams[0])
+      expect(sdks).toHaveLength(0)
+
+      const stopping = face.stop()
+      await expect(starting).resolves.toEqual({
+        ok: false,
+        error: 'Face session start was cancelled.'
+      })
+      await expect(stopping).resolves.toBe('stopped')
+      expect(Date.now() - startedAt).toBeLessThan(1000)
+      expect(streams[0].stopped).toBe(1)
+      expect(seenStreams.at(-1)).toBeNull()
+      expect(sdks).toHaveLength(0)
+    } finally {
+      off()
+    }
+  })
 })

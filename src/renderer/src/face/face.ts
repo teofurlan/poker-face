@@ -19,6 +19,7 @@ const streamListeners = new Set<(stream: MediaStream | null) => void>()
 let currentStream: MediaStream | null = null
 
 function setStream(stream: MediaStream | null): void {
+  if (currentStream === stream) return
   currentStream = stream
   for (const listener of streamListeners) listener(stream)
 }
@@ -36,7 +37,11 @@ const session = createFaceSession({
         frameRate: { ideal: 30 }
       }
     }),
-  faceMetrics: [...faceMetrics, ...cardioMetrics, ...breathingMetrics]
+  faceMetrics: [...faceMetrics, ...cardioMetrics, ...breathingMetrics],
+  // SmartSpectra's renderer SDK calls _tryLockCameraParameters() at pipeline start, locking
+  // exposure to manual; showing the preview for 1.5 s first lets webcam auto-exposure settle.
+  warmupMs: 1500,
+  onStream: (s) => setStream(s as MediaStream | null)
 })
 
 // Starts run one at a time; a stop() bumps the epoch so starts still waiting for the key give up.
