@@ -65,7 +65,7 @@ export function CalibrationScreen({
     if (cancellingRef.current) return
     cancellingRef.current = true
     setCancelling(true)
-    Promise.resolve(onCancelRef.current()).finally(() => {
+    Promise.resolve(onCancelRef.current()).catch(() => {
       cancellingRef.current = false
       if (mountedRef.current) setCancelling(false)
     })
@@ -86,7 +86,7 @@ export function CalibrationScreen({
     let done = false
 
     const finish = (): void => {
-      if (done) return
+      if (done || cancellingRef.current) return
       done = true
       const result = calibrator.finish()
       if (result.ok) {
@@ -98,7 +98,7 @@ export function CalibrationScreen({
     }
 
     const unregister = registerRef.current((status) => {
-      if (done) return
+      if (done || cancellingRef.current) return
       setHint(describeValidation(status.validationCode))
       setSdkError(status.error)
       const now = Date.now()
@@ -113,7 +113,7 @@ export function CalibrationScreen({
     })
 
     const ticker = setInterval(() => {
-      if (startedAt === null || done) return
+      if (startedAt === null || done || cancellingRef.current) return
       const left = CALIBRATION_MS - (Date.now() - startedAt)
       setMsLeft(Math.max(0, left))
       if (left <= 0) finish()
@@ -127,6 +127,7 @@ export function CalibrationScreen({
   }, [attempt])
 
   const handleRetry = (): void => {
+    if (cancellingRef.current) return
     setFailure(null)
     setStage('framing')
     setMsLeft(CALIBRATION_MS)
@@ -136,14 +137,14 @@ export function CalibrationScreen({
 
   const secondsLeft = Math.ceil(msLeft / 1000)
 
-  // Sound: a bell for each countdown second. Silence while framing.
+  // Sound: a bell for each countdown second. Silence while framing or cancelling.
   const cueRef = useRef<CueSnapshot | null>(null)
   useEffect(() => {
     emitSnapshot(cueRef, {
       phase: 'calibration',
-      calSecondsLeft: stage === 'calibrating' ? secondsLeft : null
+      calSecondsLeft: stage === 'calibrating' && !cancelling ? secondsLeft : null
     })
-  }, [stage, secondsLeft])
+  }, [stage, secondsLeft, cancelling])
   useEffect(
     () => () => {
       cueRef.current = null

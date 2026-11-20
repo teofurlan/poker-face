@@ -346,10 +346,6 @@ function GameScreen({
           cameraError={cameraError}
           onCancel={async () => {
             await stopCamera()
-            if (demo) {
-              onChangeCamera()
-              return
-            }
             session.cancelCalibration()
             sync()
           }}
