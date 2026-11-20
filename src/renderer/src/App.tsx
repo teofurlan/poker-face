@@ -179,7 +179,7 @@ function TestCameraScreen({
   }, [camera.id, source])
   const faceSeen = status?.faceDetected
   return (
-    <div className="panel">
+    <div className="panel test-camera-panel">
       <p className="muted">Testing camera: {camera.name}</p>
       <div className={`face ${faceSeen ? 'on' : 'off'}`}>{faceSeen ? 'FACE' : 'NO FACE'}</div>
       <p className="validation">{status?.validation ?? 'Starting camera'}</p>

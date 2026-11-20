@@ -51,6 +51,7 @@
   --s-8: 4rem;
   --gutter: 4.5rem;
   --bug-h: 2.75rem;
+  --preview-w: clamp(18rem, 32vw, 40rem);
 
   /* Shape */
   --skew: -8deg;
@@ -452,6 +453,7 @@ button:focus-visible {
 /* Setup: key, camera, test camera */
 .lobby-actions,
 .consent-actions,
+.ready-actions,
 .calibration-actions,
 .replay-actions {
   display: flex;
@@ -714,9 +716,11 @@ button:focus-visible {
   color: var(--light);
 }
 
-/* Calibration */
-.calibration-panel {
+/* Calibration and camera test: reserve space on the right for the enlarged live monitor */
+.calibration-panel,
+.test-camera-panel {
   position: relative;
+  padding-right: calc(var(--preview-w) + 3rem);
 }
 
 .cal-who {
@@ -757,7 +761,9 @@ button:focus-visible {
   color: var(--dim);
 }
 
+/* Enlarged right-edge live camera monitor replaced the placeholder framing oval */
 .oval {
+  display: none;
   position: absolute;
   left: 76%;
   top: 50%;
@@ -1074,7 +1080,7 @@ button:focus-visible {
 .pressure-card {
   position: absolute;
   left: var(--gutter);
-  right: 18rem;
+  right: var(--gutter);
   bottom: 1.25rem;
 }
 
@@ -1365,6 +1371,7 @@ button:focus-visible {
   display: grid;
   grid-template-columns: 5rem 1fr 9rem 11rem;
   align-items: center;
+  padding-right: var(--s-4);
 }
 
 .leaderboard-header {
@@ -1456,6 +1463,10 @@ button:focus-visible {
   font-size: 3.25rem;
 }
 
+.leaderboard-panel.dense .leaderboard-row .col-time {
+  font-size: 1.5rem;
+}
+
 .leaderboard-actions {
   grid-area: side;
   display: flex;
@@ -1469,12 +1480,14 @@ button:focus-visible {
   text-align: center;
 }
 
-/* Camera preview: a monitor on the arena floor, bottom-right, mirrored */
+/* Camera preview: a big monitor on the right edge of the arena, mirrored.
+   It sits above the stage on purpose; overlapping the CRACK slab is fine. */
 .camera-preview {
   position: fixed;
   right: 1.5rem;
-  bottom: calc(var(--bug-h) + 1.5rem);
-  width: 15rem;
+  top: calc((100vh - var(--bug-h)) / 2);
+  translate: 0 -50%;
+  width: var(--preview-w);
   aspect-ratio: 16 / 9;
   object-fit: cover;
   transform: scaleX(-1);
