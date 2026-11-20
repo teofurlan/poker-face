@@ -237,4 +237,103 @@ describe('createSessionMachine', () => {
     expect(session.getState().lap).toBe(2)
     expect(session.getState().results).toEqual({})
   })
+
+  it('returns to ready_player on cancelCalibration without losing multiplayer progress', () => {
+    const session = createSessionMachine()
+    session.addPlayer('Alice')
+    session.addPlayer('Bob')
+    session.proceedToConsent()
+    session.confirmConsent()
+
+    // Player 1 cancels calibration -> back to ready_player for Alice, players intact
+    session.startCalibration()
+    expect(session.getState().phase).toBe('calibrating')
+    session.cancelCalibration()
+    expect(session.getState().phase).toBe('ready_player')
+    expect(session.getState().players).toEqual(['Alice', 'Bob'])
+    expect(session.getState().currentPlayerIndex).toBe(0)
+    expect(session.getState().currentPlayerName).toBe('Alice')
+
+    // Alice finishes her turn
+    const baseline = {
+      ANGRY: 0,
+      CONTEMPT: 0,
+      DISGUST: 0,
+      FEAR: 0,
+      HAPPY: 0,
+      NEUTRAL: 90,
+      SAD: 10,
+      SURPRISE: 0
+    }
+    session.startCalibration()
+    session.calibrationCompleted(baseline)
+    session.roundCompleted({
+      totalCracks: 2,
+      firstCrackMs: 12000,
+      cracks: [{ startMs: 12000, endMs: 13000, peakVariation: 50 }],
+      spokeEvents: [],
+      faceLossTotalMs: 0,
+      voided: false
+    })
+    session.nextPlayerOrLeaderboard()
+
+    // Player 2 cancels calibration -> back to ready_player for Bob, Alice's result preserved
+    session.startCalibration()
+    expect(session.getState().phase).toBe('calibrating')
+    session.cancelCalibration()
+    const state = session.getState()
+    expect(state.phase).toBe('ready_player')
+    expect(state.currentPlayerIndex).toBe(1)
+    expect(state.currentPlayerName).toBe('Bob')
+    expect(state.lap).toBe(1)
+    expect(state.currentBaseline).toBeNull()
+    expect(state.results['Alice']?.totalCracks).toBe(2)
+
+    // Bob can restart calibration and proceed to round normally
+    session.startCalibration()
+    session.calibrationCompleted(baseline)
+    expect(session.getState().phase).toBe('round')
+    expect(session.getState().currentBaseline).toEqual(baseline)
+  })
+
+  it('treats cancelCalibration as a no-op outside the calibrating phase', () => {
+    const session = createSessionMachine()
+    session.addPlayer('Alice')
+    session.cancelCalibration()
+    expect(session.getState().phase).toBe('lobby')
+
+    session.proceedToConsent()
+    session.confirmConsent()
+    session.startCalibration()
+    session.calibrationCompleted({
+      ANGRY: 0,
+      CONTEMPT: 0,
+      DISGUST: 0,
+      FEAR: 0,
+      HAPPY: 0,
+      NEUTRAL: 100,
+      SAD: 0,
+      SURPRISE: 0
+    })
+    expect(session.getState().phase).toBe('round')
+    session.cancelCalibration()
+    expect(session.getState().phase).toBe('round')
+
+    session.roundCompleted({
+      totalCracks: 0,
+      firstCrackMs: null,
+      cracks: [],
+      spokeEvents: [],
+      faceLossTotalMs: 0,
+      voided: false
+    })
+    expect(session.getState().phase).toBe('replay')
+    session.cancelCalibration()
+    expect(session.getState().phase).toBe('replay')
+
+    session.nextPlayerOrLeaderboard()
+    expect(session.getState().phase).toBe('leaderboard')
+    session.cancelCalibration()
+    expect(session.getState().phase).toBe('leaderboard')
+  })
 })
