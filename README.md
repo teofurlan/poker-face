@@ -4,6 +4,8 @@ A local party game for Windows built on the [Presage SmartSpectra SDK](https://s
 
 One **Player** sits in the **Hot seat** in front of the webcam and tries to keep a straight face in silence for 60 seconds, while everyone else (**Challengers**, up to 6 players in a session) tries to make them laugh. The game asks **"did you crack?"**, never **"are you lying?"**, and makes no claims about truth, health, or clinical stress.
 
+**Links:** [Watch the 22s launch demo (YouTube)](https://youtu.be/7BGfqpd4FUw) · [Read the DEV.to submission post](https://dev.to/teo_furlan/poker-face-a-party-game-where-your-face-is-the-only-tell-built-in-public-1ial) · [Download Windows installer (`v1.0.0`)](https://github.com/teofurlan/poker-face/releases/tag/v1.0.0)
+
 ## How It Works
 
 1. **Setup (or Demo round):** On first launch, enter your free Presage API key from [physiology.presagetech.com](https://physiology.presagetech.com) (saved encrypted on your machine via Electron `safeStorage`, or set via `PRESAGE_API_KEY`) and select a webcam. You can also click **Try a demo round** without a webcam, internet connection, or API key.
@@ -39,7 +41,7 @@ Poker Face runs `@smartspectra/node-sdk` in **Electron renderer mode**: the rend
 
 ### Windows Installer (Windows 10/11 x64)
 
-Download `poker-face-1.0.0-setup.exe` from the repository's GitHub Releases page. The installer is unsigned, so Windows SmartScreen will display a warning on first run.
+Download [`poker-face-1.0.0-setup.exe`](https://github.com/teofurlan/poker-face/releases/tag/v1.0.0) from GitHub Releases. The installer is unsigned, so Windows SmartScreen will display a warning on first run.
 
 ### Run From Source
 
