@@ -1,12 +1,10 @@
 ---
-title: 'Poker Face: a party game where your face is the only tell (built in public)'
+title: 'Poker Face: a party game where your face is the only tell'
 published: true
 tags: devchallenge, presagechallenge, gamedev, webdev
 ---
 
 _This is a submission for the [Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04)_
-
-> 🚧 **Built in public.** This post is updated as the project moves forward. The build log at the end shows what is done and what is still planned. Anything not marked as done is a plan, not a working feature yet.
 
 ## What I Built
 
@@ -28,7 +26,9 @@ What it is **not**: a lie detector. The question the game asks is _"did you crac
 
 ## Demo
 
-_Video coming soon._
+{% youtube 7BGfqpd4FUw %}
+
+_[Watch the 22-second launch demo on YouTube](https://youtu.be/7BGfqpd4FUw). The launch film pairs an illustrative AI demo webcam preview (labelled on screen) with real SmartSpectra SDK trace values from the recorded Demo round._
 
 **Try it without a camera or an API key.** The live game needs a webcam, an internet connection and your own Presage API key, and every live session spends SDK credits. Most people reading this won't have all of that set up, so the app includes a **demo round**: press _Try a demo round_ on the first screen. It replays a real session I recorded with the same SDK during development (my own face, cued smiles and surprises) through the exact same calibration, crack detection, pressure meter, replay and leaderboard as a live round. Your camera is never opened and nothing is recorded; every demo screen is labelled _Demo: recorded session_ so it's never mistaken for a live reading.
 
@@ -36,7 +36,7 @@ _Video coming soon._
 
 _Repository: [github.com/teofurlan/poker-face](https://github.com/teofurlan/poker-face)_
 
-**Stack:** a Windows desktop app built with Electron, TypeScript, electron-vite and React, running the SmartSpectra Node SDK in its Electron renderer mode: the window opens the camera, shows a live camera preview and feeds the same frames to the SDK, which processes them in the main process. One fullscreen window is the shared screen for the whole room (mirror it to a TV if you have one). You can run it from source (`npm install`, `npm run dev`). On first launch it asks for your Presage API key and lets you pick your camera from a list. A packaged Windows installer builds too; it is unsigned, so Windows warns before installing it.
+**Stack:** a Windows desktop app built with Electron, TypeScript, electron-vite and React, running the SmartSpectra Node SDK in its Electron renderer mode: the window opens the camera, shows a live camera preview and feeds the same frames to the SDK, which processes them in the main process. One fullscreen window is the shared screen for the whole room (mirror it to a TV if you have one). You can run it from source (`npm install`, `npm run dev`). On first launch it asks for your Presage API key and lets you pick your camera from a list. A packaged Windows installer (`poker-face-1.0.0-setup.exe`) is available on [GitHub Releases](https://github.com/teofurlan/poker-face/releases/tag/v1.0.0); it is unsigned, so Windows SmartScreen warns before installing it.
 
 **Look and sound:** the screen is styled like a title-fight broadcast ("Fight Night"): a "Tonight's card" lobby, a scorebug with the round clock and the crack count, and a "Final card" leaderboard. Red is reserved for cracks, and every state change also has a shape or a word, so nothing depends on colour alone. Optional sound effects are synthesized in the browser with Web Audio, with no audio files: a bell for each calibration second, a thud and a camera-flash pop on each crack, a faster tick in the last ten seconds and a quiet crowd murmur that follows the pressure meter. A sound toggle on every screen remembers your choice.
 
@@ -56,7 +56,7 @@ The design splits the SmartSpectra signals by speed:
 - Blink detection proved unreliable, so blinks are not cracks.
 - Pulse and breathing need your chest in frame, take about 20 seconds to produce a first reading, and swing a lot. They will never count as cracks.
 
-These numbers come from one person in one room; thresholds will be tuned during the build.
+These numbers come from one person in one room and directly drove the shipped detection rules (Total Variation threshold `>= 40`, hysteresis release `< 25` for `500 ms`, and `1000 ms` cooldown).
 
 ## Prize Categories
 
@@ -99,3 +99,4 @@ Poker Face was designed and built in structured human-guided agent sessions comb
 - **2026-11-15:** Visual direction chosen from three proposals (a title-fight broadcast, a teletext page and a quiet gallery): **Fight Night**. Optional sound effects added. Closing the app with Alt+F4 mid-round used to crash it; it now stops the camera first.
 - **2026-11-15:** Demo round added, so anyone can try the game without a webcam, a network connection or an API key (see Demo). Next: the demo video.
 - **2026-11-20:** Submission polish: enlarged right-edge camera preview with aligned arena and dense 5–6 player leaderboard spacing, cancelable calibration returning to the player's ready screen without losing the session, a 1.5 s camera warm-up before the SDK locks exposure, packaged URL guard tests, Windows installer verification, and updated README / Agent Session docs.
+- **2026-11-22:** Final live verification complete, launch demo video published, `v1.0.0` Windows installer released on GitHub Releases, and submission finalized.
