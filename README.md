@@ -1,63 +1,49 @@
-# Poker Face (working name)
+# Poker Face
 
-A party game for the [DEV Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04). One player sits in front of the camera and keeps a straight face while everyone else tries to crack them. The game scores what the body lets slip and never claims to know whether someone is lying.
+A local party game for Windows built on the [Presage SmartSpectra SDK](https://smartspectra.presagetech.com/) for the [DEV Presage SmartSpectra SDK Challenge](https://dev.to/challenges/presage-2026-11-04).
 
-**Status (2026-11-13):** the app skeleton runs: a fullscreen Electron app that asks for the API key, lets you pick a camera and shows live whether the SDK sees a face ([build ticket](https://github.com/teofurlan/poker-face/issues/9)). The game itself (calibration, rounds, cracks) is the next step.
+One **Player** sits in the **Hot seat** in front of the webcam and tries to keep a straight face in silence for 60 seconds, while everyone else (**Challengers**, up to 6 players in a session) tries to make them laugh. The game asks **"did you crack?"**, never **"are you lying?"**, and makes no claims about truth, health, or clinical stress.
 
-## Core idea
+## How It Works
 
-- **The question is "did you crack?", not "are you lying?".** The user chose this framing from the start, and the research confirmed it (see "Why this framing").
-- **Rounds:** one player is in the hot seat. The others try to break their composure with awkward questions, jokes, bluffs or staring. Round rules were decided on 2026-11-12 in [the round ticket](https://github.com/teofurlan/poker-face/issues/6).
-- **Cracks are detected live** from the fast SDK signals: a micro-smile or any expression change (`face.expression`), a nervous blink (blink detection), and talking (`face.talking`, to separate answering from holding still).
-- **Background tension builds through the round** from the slower signals: pulse (a 12 s average) and breathing (a 30 s average, from the upper chest waveform). They feed a "pressure" meter rather than instant verdicts.
-- **End-of-round replay:** a timeline with each crack marked. It is the shareable moment and the centerpiece of the demo video.
-- **Honest copy everywhere:** "it showed," never "you lied." The game makes no claims about truth, health, or stress diagnosis.
+1. **Setup (or Demo round):** On first launch, enter your free Presage API key from [physiology.presagetech.com](https://physiology.presagetech.com) (saved encrypted on your machine via Electron `safeStorage`, or set via `PRESAGE_API_KEY`) and select a webcam. You can also click **Try a demo round** without a webcam, internet connection, or API key.
+2. **Tonight's card (Lobby) & Consent:** Add 1 to 6 player names in entry order, then confirm the single **Consent & Privacy** screen before play begins. Anyone unwilling removes their name before starting.
+3. **Hot Seat & Calibration:** Each player gets a **Next in the Hot Seat** staging screen (`Start 8s Calibration` or `Back to Lobby`). Calibration warms up the webcam for 1.5 s so auto-exposure settles, waits until the SDK reports valid framing (`Face OK` for 1 s), and averages an 8-second resting **Baseline** (up to 2 retries if valid framing drops below 80%). Press **Cancel** (or `Esc`) at any stage to stop the camera and return to the player's ready screen without losing the multiplayer session.
+4. **Live Round (60 s):** Sit facing the camera in silence. Any sharp facial departure from your personal baseline counts as a **Crack**—triggering a counter thud, red edge bleed, and **CRACK!** callout—while slow pulse and breathing averages feed an ambient **Room pressure** meter after a 20 s settling window. Losing face visibility pauses the clock with a **Back in frame** banner (over 10 s cumulative loss voids the round).
+5. **Replay & Final Card:** Each round ends with a 60-second **Replay timeline** showing every crack and any detected `Spoke` marks. After one **Lap** through all players, the **Final card** leaderboard ranks everyone by fewest cracks, breaking ties by longest time to the first crack, with a **Rematch** button for another lap.
 
-## Why this framing
+Look and sound follow the **Fight Night** broadcast direction (`Bahnschrift` typography, red reserved exclusively for cracks, shape/text paired with color on every indicator, `prefers-reduced-motion` support) with optional Web Audio synthesized sound effects and a remembered **Sound: On/Off** toggle in the footer bar.
 
-- **Lie detection is already done with this SDK:**
-  - _Vital Verdict_ ([Devpost](https://devpost.com/software/vital-verdict)) is an Among Us-like game where players see each other's pulse. It uses Presage SmartSpectra.
-  - _Trust Me Bro_ ([Devpost](https://devpost.com/software/trust-me-bro-i74zut), HackBrown 2026) is a bluffing game with a "lie-detecting hat."
-  - The Devpost pages returned 403, so their prizes are unverified.
-- **Lie detection is sensitive for this sponsor.** Presage was selected for the DoD/DIU _Polygraph+_ credibility-assessment prototype ([DIU, 2024](https://www.diu.mil/latest/department-of-defense-defense-innovation-unit-announce-polygraph-effort-to)), and physiological lie detection is not reliable.
-- **It matches what the SDK actually does.** Pulse is a 12 s average, too slow to react to a single answer, while expressions, blinks and talking are fast.
-- **The contest has no game like this yet.** On 2026-11-06 the DEV API returned about 17 submissions (6 empty). They cluster around:
-  - calm/stress wellness and breathing visuals: Aura, Glassbreath, Presage Sense, CodeCalm, The Living Darkroom;
-  - pressure coaching: HalfBeat, the VTU viva examiner, Bud AI;
-  - one dev tool: Rubber Duck Gate.
+## Demo Round (No Camera, Key, or Credits)
 
-  No party or multiplayer game was among them. This is a snapshot, and more entries will arrive before the deadline.
+Click **Try a demo round** on the API key or camera selection screen to play a full round—calibration, crack detection, room pressure meter, replay timeline, and leaderboard—using a real session recorded during development (`src/renderer/src/demo/recording.json`, developer's own face used with consent). Your camera stays closed, no network request is made, no credits are spent, and every screen displays a **Demo: recorded session** badge.
 
-## Challenge constraints
+## How It Uses Presage SmartSpectra
 
-- **Deadline:** November 22, 2026, 11:59 PM PST. Solo entry, one submission per person, entrant 18+.
-- **Prizes require an English submission.**
-- **The submission needs:**
-  - a DEV post using the template and the `#presagechallenge` tag;
-  - a public repository with setup instructions;
-  - a demo video showing the live Presage signals;
-  - a Consent and Data Handling section.
-- **Prohibited:** diagnosis or treatment claims, medical decision-making, and covert or non-consensual monitoring ([contest rules](https://dev.to/page/presage-2026-11-04-contest-rules)).
-- **Judging criteria:** use of the technology, usability and user experience, and originality. Ties go to the most positive reactions on the DEV post.
-- **Target categories:** _Most Creative or Delightful Use_ first; the overall winner spots also apply.
+Poker Face runs `@smartspectra/node-sdk` in **Electron renderer mode**: the renderer window owns the webcam `MediaStream` (`1280x720` @ `30 fps` ideal), displays the mirrored live monitor, and streams frames through `bindSmartSpectraIpc` to the main process for on-device processing.
 
-## SDK facts that shape the design
+- **Fast signals → Cracks:** Raw SmartSpectra expression labels frequently score a resting poker face as `SAD`. Instead of trusting labels, Poker Face measures **Total Variation Distance** (`0.5 * sum(|sample_i - baseline_i|)`) across the 8 expression classes relative to each player's own 8 s baseline. A crack begins at `>= 40`, ends once variation stays `< 25` for `500 ms` (hysteresis), and enforces a `1000 ms` cooldown so one laugh counts as a single crack.
+- **Slow signals → Room pressure:** Pulse (12 s average) and breathing (30 s average) drive the **Room pressure** meter purely as theatrical mood for challengers; it has no effect on score. If chest framing is lost (`kChestNotVisible`), the round continues without pausing and the meter holds gracefully.
+- **Camera warm-up & teardown:** Because SmartSpectra's renderer pipeline locks camera exposure to manual at start (`_tryLockCameraParameters`), Poker Face previews and warms up the stream for 1.5 s first. Sessions enforce `enableTelemetry: false`, wait for clean camera teardown on window close (`Alt+F4`), and exit the process if a billed session ever hangs on stop.
+- **Unpacked native packaging:** Windows builds set `asar: false` in [electron-builder.yml](electron-builder.yml) so native SDK DLLs resolve from real paths on disk.
 
-From the [SmartSpectra docs](https://smartspectra.presagetech.com/docs), read 2026-11-06:
+## Consent and Data Handling
 
-- **Vitals require a stationary subject.** Large motion can produce wrong values reported with high confidence. In the game, holding still is the rule anyway.
-- **Signals and windows:**
-  - pulse: a 12 s average, valid from 40 to 110 BPM;
-  - breathing: a 30 s average;
-  - HRV: 60 s;
-  - face analysis: 478 landmarks, blink, talking, and expression probabilities.
-- **Platforms:** Node.js/Electron (win32-x64 supported), C++ (Windows is experimental), Android and Swift.
-- **Processing and network:** metrics are computed on-device. The SDK calls the Presage backend only to authenticate the API key, so a network connection is required.
-- **Probably one subject at a time.** This is unverified; checking it is part of the spike.
+- **Explicit opt-in:** One shared consent screen lists every player in the lobby before play begins. Unwilling players must be removed before continuing.
+- **Scoped camera activation:** The webcam opens only during camera testing, calibration, and each player's own round, with a mirrored live preview always visible on screen.
+- **Nothing recorded or uploaded:** Processing runs on-device; only in-memory crack timestamps and spoke markers exist during the session to render the replay and leaderboard, and everything clears on reset or exit.
+- **Network & key storage:** Network access is required only to validate your Presage API key against Presage's backend. SDK telemetry is disabled (`enableTelemetry: false`). Saved keys are encrypted on disk with Electron `safeStorage` (or provided via `PRESAGE_API_KEY`) and never bundled.
+- **No lie detection or medical claims:** Poker Face is strictly an entertainment party game.
 
-## Run it from source
+## Run It
 
-You need Windows 10 or 11 (x64), Node.js 20 or later, a webcam, a network connection, and a free Presage API key from [physiology.presagetech.com](https://physiology.presagetech.com).
+### Windows Installer (Windows 10/11 x64)
+
+Download `poker-face-1.0.0-setup.exe` from the repository's GitHub Releases page. The installer is unsigned, so Windows SmartScreen will display a warning on first run.
+
+### Run From Source
+
+**Prerequisites:** Windows 10 or 11 (x64), Node.js 20+ (tested on Node 22), a webcam, an internet connection, and a free Presage API key from [physiology.presagetech.com](https://physiology.presagetech.com) (not needed for Demo mode).
 
 ```sh
 git clone https://github.com/teofurlan/poker-face.git
@@ -66,41 +52,23 @@ npm install
 npm run dev
 ```
 
-- On first launch the app asks for your API key. It is saved only on your computer, encrypted with Electron `safeStorage`. If the `PRESAGE_API_KEY` environment variable is set, the app uses it and skips that screen.
-- Then pick your camera. The app remembers your choice.
-- The SDK runs only while the live screen is open, and that time uses your Presage credits. Press **Stop** when you are done.
-- If `npm run dev` fails with `Error: Electron uninstall`, npm skipped the Electron download. Run `node node_modules/electron/install.js`, then try again.
+- If `PRESAGE_API_KEY` is set in your environment, the app skips the API key screen automatically.
+- If `npm run dev` fails with `Error: Electron uninstall`, run `node node_modules/electron/install.js` and start again.
 
-Other commands: `npm test` runs the unit tests, `npm start` previews the production build, and `npm run build:win` builds an unsigned Windows installer in `dist/`.
+**Other commands:**
 
-## Demo round (no camera, no key)
+- `npm test` — run Vitest unit tests
+- `npm run lint -- --max-warnings 0` — run ESLint + Prettier checks
+- `npm run build` — run Node & Web TypeScript checks and build with `electron-vite`
+- `npm start` — preview the production build with `electron-vite preview`
+- `npm run build:win` — package the unsigned Windows NSIS installer into `dist/`
 
-On the API key screen or the camera screen, press **Try a demo round**. Read the short explanation and press **Start demo round**. It plays one full round (calibration, crack detection, pressure meter, replay, leaderboard) from a real session recorded during development with the same SDK (spike run of 2026-11-10, the developer's own face, used with consent). It needs no webcam, network or API key and spends no credits. Your own face is not used and nothing is recorded. Every demo screen is marked "Demo: recorded session" and the corner preview shows "Recorded session" instead of video. Live rounds are unchanged.
+## Project Structure
 
-## Plan
-
-1. **Spike (1-2 days).** Get a free API key and run the Node SDK on Windows with a webcam. Measure:
-   - the latency of expression, blink and talking events;
-   - how stable expression probabilities are;
-   - how many faces the SDK tracks;
-   - how pulse and breathing behave over a 60-90 s round.
-
-   Go/no-go: crack events must arrive in under about 1 s.
-
-2. **Game design (half a day).** Define the round length, the crack thresholds relative to a per-player baseline (calibrated in the first seconds), scoring, the number of players, and the screen layout so the room can see it.
-3. **Core loop (days 3-7).** Build the consent screen, calibration, a live round with the crack meter and pressure meter, the replay timeline, and a leaderboard for the session.
-4. **Polish (days 8-11).** Add sound, animations, a sample-recording mode that runs without a camera or key (the strongest entries have one), and installers or simple setup.
-5. **Submission (days 12-14).** Write the README, the consent and data section, and the demo video (a real round with friends). Publish the DEV post with the optional agent session. Leave a buffer day before November 22.
-
-## Consent and data (design intent)
-
-- One consent screen in the lobby lists every player; pressing it means everyone listed agrees (decided 2026-11-12, [round ticket](https://github.com/teofurlan/poker-face/issues/6)). Anyone unwilling removes their name first. The camera runs only during each player's own round.
-- Nothing is recorded or uploaded. Only the timeline of crack events stays in memory, and it is cleared when the session ends.
-- The SDK network call is limited to API key authentication; disclose it and any SDK telemetry.
-
-## Open questions
-
-- The final name.
-- ~~The tech stack~~: decided 2026-11-11, an Electron desktop app (TypeScript, electron-vite, React); see [the stack ticket](https://github.com/teofurlan/poker-face/issues/5).
-- Whether the observers also see the pulse or breathing live, or only the cracks. The trade-off is drama versus privacy.
-- Whether to add an optional "dare deck" of prompts for the challengers.
+- `src/main/` — Electron window lifecycle, `isAppUrl` navigation guard (`appUrl.ts`), encrypted `safeStorage` API key store (`apiKey.ts`), camera persistence (`camera.ts`), and IPC handlers (`ipc.ts`)
+- `src/preload/` — sandboxed `contextBridge` API and `@smartspectra/node-sdk/preload` bridge
+- `src/renderer/src/game/` — baseline calibrator, Total Variation crack detector, pressure meter, round clock, and multiplayer session state machine
+- `src/renderer/src/face/` — renderer camera session lifecycle with warm-up, cancellation, and StrictMode guards
+- `src/renderer/src/demo/` — recorded spike session asset and `FaceSource` replay adapter
+- `src/renderer/src/audio/` — zero-dependency Web Audio cue rules, synthesizer, and mute persistence
+- `src/renderer/src/components/` — Fight Night React screens and shared chrome

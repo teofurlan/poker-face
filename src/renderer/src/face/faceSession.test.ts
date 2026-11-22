@@ -39,9 +39,13 @@ class FakeSdk extends EventEmitter implements SdkLike {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
+function setup(
+  decoded: unknown = { face: { expression: [{ scores: [] }] } },
+  extra: { warmupMs?: number; trackStream?: boolean } = {}
+) {
   const sdk = new FakeSdk()
   const streams: FakeStream[] = []
+  const publishedStreams: (StreamLike | null)[] = []
   const requestedCameras: string[] = []
   let failCamera: string | null = null
   let holdCamera = false
@@ -73,6 +77,10 @@ function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
     },
     faceMetrics: [42],
     stopTimeoutMs: 50,
+    warmupMs: extra.warmupMs,
+    ...(extra.trackStream
+      ? { onStream: (s: StreamLike | null) => void publishedStreams.push(s) }
+      : {}),
     now: () => 1000
   })
   return {
@@ -82,6 +90,7 @@ function setup(decoded: unknown = { face: { expression: [{ scores: [] }] } }) {
     statuses,
     session,
     streams,
+    publishedStreams,
     requestedCameras,
     failCameraWith: (message: string) => (failCamera = message),
     holdCamera: () => (holdCamera = true),
@@ -358,5 +367,93 @@ describe('face session', () => {
     sdk.emit('validationStatus', 0, 0, '')
     expect((statuses.at(-1) as { expressions?: unknown }).expressions).toBeUndefined()
     expect(statuses.at(-1)).toMatchObject({ faceDetected: true, validationCode: 0 })
+  })
+
+  it('publishes the stream immediately and waits warmupMs before starting the SDK', async () => {
+    vi.useFakeTimers()
+    try {
+      const { created, statuses, session, streams, publishedStreams, onStatus } = setup(undefined, {
+        warmupMs: 1500,
+        trackStream: true
+      })
+      const startPromise = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(publishedStreams).toEqual([streams[0]])
+      expect(statuses.at(-1)).toMatchObject({ validation: 'Adjusting camera' })
+      expect(created).toHaveLength(0)
+
+      await vi.advanceTimersByTimeAsync(1499)
+      expect(created).toHaveLength(0)
+
+      await vi.advanceTimersByTimeAsync(1)
+      await expect(startPromise).resolves.toBe(streams[0])
+      expect(created).toHaveLength(1)
+      expect(created[0].started).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('aborts warm-up immediately on stop, releases the stream and resets preview without creating an SDK', async () => {
+    const { created, session, streams, publishedStreams, onStatus } = setup(undefined, {
+      warmupMs: 5000,
+      trackStream: true
+    })
+    const startedAt = Date.now()
+    const starting = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await vi.waitFor(() => expect(publishedStreams).toEqual([streams[0]]))
+
+    const stopping = session.stop()
+    await expect(starting).rejects.toThrow(/cancelled/)
+    await expect(stopping).resolves.toBe('stopped')
+    expect(Date.now() - startedAt).toBeLessThan(1000)
+    expect(streams[0].stopped).toBe(1)
+    expect(publishedStreams).toEqual([streams[0], null])
+    expect(created).toHaveLength(0)
+    expect(session.isRunning()).toBe(false)
+  })
+
+  it('handles start -> stop -> start during warm-up, leaving only the second session alive', async () => {
+    const { created, session, streams, publishedStreams, onStatus } = setup(undefined, {
+      warmupMs: 25,
+      trackStream: true
+    })
+    const first = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await vi.waitFor(() => expect(streams).toHaveLength(1))
+
+    const stopping = session.stop()
+    const second = session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+
+    await expect(first).rejects.toThrow(/cancelled/)
+    await stopping
+    await expect(second).resolves.toBe(streams[1])
+    expect(streams[0].stopped).toBe(1)
+    expect(streams[1].stopped).toBe(0)
+    expect(created).toHaveLength(1)
+    expect(publishedStreams.at(-1)).toBe(streams[1])
+    expect(session.isRunning()).toBe(true)
+  })
+
+  it('resets the published stream to null if SDK creation or useMediaStream throws after warm-up', async () => {
+    const { session, onStatus, streams, publishedStreams, failCreate } = setup(undefined, {
+      warmupMs: 10,
+      trackStream: true
+    })
+    failCreate()
+    await expect(session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)).rejects.toThrow(
+      'create failed'
+    )
+    expect(streams[0].stopped).toBe(1)
+    expect(publishedStreams).toEqual([streams[0], null])
+  })
+
+  it('resets the published stream to null on normal stop', async () => {
+    const { session, streams, publishedStreams, onStatus } = setup(undefined, {
+      trackStream: true
+    })
+    await session.start({ apiKey: 'k', cameraId: 'cam-1' }, onStatus)
+    await expect(session.stop()).resolves.toBe('stopped')
+    expect(publishedStreams).toEqual([streams[0], null])
   })
 })

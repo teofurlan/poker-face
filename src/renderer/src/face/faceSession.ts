@@ -54,6 +54,8 @@ interface Deps {
   acquireStream: (cameraId: string) => Promise<StreamLike>
   faceMetrics: readonly number[]
   stopTimeoutMs?: number
+  warmupMs?: number
+  onStream?: (stream: StreamLike | null) => void
   now?: () => number
 }
 
@@ -67,13 +69,18 @@ export function createFaceSession(deps: Deps): {
 } {
   const now = deps.now ?? Date.now
   const stopTimeoutMs = deps.stopTimeoutMs ?? 3000
+  const warmupMs = deps.warmupMs ?? 0
   // The SDK stays tracked until stopAsync + destroy have really finished, never earlier.
   let sdk: SdkLike | null = null
   let stream: StreamLike | null = null
   let stopping: Promise<StopResult> | null = null
   let forced = false
   // A start in progress counts as running; stop() cancels it and waits for its teardown.
-  let starting: { cancelled: boolean; finished: Promise<void> } | null = null
+  let starting: {
+    cancelled: boolean
+    cancelWarmup: (() => void) | null
+    finished: Promise<void>
+  } | null = null
 
   const releaseStream = (s: StreamLike): void => {
     for (const track of s.getTracks()) track.stop()
@@ -92,6 +99,7 @@ export function createFaceSession(deps: Deps): {
     let finish: () => void = () => {}
     const token = {
       cancelled: false,
+      cancelWarmup: null as (() => void) | null,
       finished: new Promise<void>((resolve) => (finish = resolve))
     }
     starting = token
@@ -104,7 +112,7 @@ export function createFaceSession(deps: Deps): {
   }
 
   async function run(
-    token: { cancelled: boolean },
+    token: { cancelled: boolean; cancelWarmup: (() => void) | null },
     args: { apiKey: string; cameraId: string },
     onStatus: (s: FaceStatus) => void
   ): Promise<StreamLike> {
@@ -127,6 +135,27 @@ export function createFaceSession(deps: Deps): {
       releaseStream(camera)
       throw new Error('Face session start was cancelled.')
     }
+    deps.onStream?.(camera)
+    if (warmupMs > 0) {
+      emit({ validation: 'Adjusting camera' })
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(() => {
+          token.cancelWarmup = null
+          resolve()
+        }, warmupMs)
+        token.cancelWarmup = () => {
+          clearTimeout(timer)
+          token.cancelWarmup = null
+          resolve()
+        }
+        if (token.cancelled) token.cancelWarmup()
+      })
+      if (token.cancelled) {
+        deps.onStream?.(null)
+        releaseStream(camera)
+        throw new Error('Face session start was cancelled.')
+      }
+    }
     let s: SdkLike | null = null
     try {
       s = deps.createSdk({
@@ -143,6 +172,7 @@ export function createFaceSession(deps: Deps): {
       } catch {
         // the stream release below matters more
       }
+      deps.onStream?.(null)
       releaseStream(camera)
       throw err
     }
@@ -213,7 +243,10 @@ export function createFaceSession(deps: Deps): {
   function stop(): Promise<StopResult> {
     if (stopping) return stopping
     const s = sdk
-    if (starting) starting.cancelled = true
+    if (starting) {
+      starting.cancelled = true
+      starting.cancelWarmup?.()
+    }
     if (!s) {
       const pending = starting
       return pending ? pending.finished.then((): StopResult => 'stopped') : Promise.resolve('idle')
@@ -237,6 +270,7 @@ export function createFaceSession(deps: Deps): {
       // The host owns the camera stream, so it releases it once the SDK has let go.
       for (const track of stream?.getTracks() ?? []) track.stop()
       stream = null
+      deps.onStream?.(null)
       return ok ? 'stopped' : 'forced'
     })()
     const run = (async (): Promise<StopResult> => {

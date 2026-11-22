@@ -20,7 +20,7 @@ export interface CalibrationStatus {
 interface CalibrationScreenProps {
   playerName: string
   onCalibrated: (baseline: ExpressionScores) => void
-  onCancel: () => void
+  onCancel: () => void | Promise<void>
   cameraError?: string | null
   registerStatusReceiver: (fn: (status: CalibrationStatus) => void) => () => void
 }
@@ -41,14 +41,43 @@ export function CalibrationScreen({
   const [hint, setHint] = useState('Starting camera')
   const [sdkError, setSdkError] = useState<string | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState(false)
 
   // Keep the latest callbacks without restarting the attempt when the parent re-renders.
   const onCalibratedRef = useRef(onCalibrated)
+  const onCancelRef = useRef(onCancel)
   const registerRef = useRef(registerStatusReceiver)
+  const cancellingRef = useRef(false)
+  const mountedRef = useRef(true)
   useEffect(() => {
     onCalibratedRef.current = onCalibrated
+    onCancelRef.current = onCancel
     registerRef.current = registerStatusReceiver
   })
+  useEffect(
+    () => () => {
+      mountedRef.current = false
+    },
+    []
+  )
+
+  const handleCancel = (): void => {
+    if (cancellingRef.current) return
+    cancellingRef.current = true
+    setCancelling(true)
+    Promise.resolve(onCancelRef.current()).catch(() => {
+      cancellingRef.current = false
+      if (mountedRef.current) setCancelling(false)
+    })
+  }
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape' && !e.repeat) handleCancel()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   useEffect(() => {
     const gate = createFramingGate({ requiredMs: 1000 })
@@ -57,7 +86,7 @@ export function CalibrationScreen({
     let done = false
 
     const finish = (): void => {
-      if (done) return
+      if (done || cancellingRef.current) return
       done = true
       const result = calibrator.finish()
       if (result.ok) {
@@ -69,7 +98,7 @@ export function CalibrationScreen({
     }
 
     const unregister = registerRef.current((status) => {
-      if (done) return
+      if (done || cancellingRef.current) return
       setHint(describeValidation(status.validationCode))
       setSdkError(status.error)
       const now = Date.now()
@@ -84,7 +113,7 @@ export function CalibrationScreen({
     })
 
     const ticker = setInterval(() => {
-      if (startedAt === null || done) return
+      if (startedAt === null || done || cancellingRef.current) return
       const left = CALIBRATION_MS - (Date.now() - startedAt)
       setMsLeft(Math.max(0, left))
       if (left <= 0) finish()
@@ -98,6 +127,7 @@ export function CalibrationScreen({
   }, [attempt])
 
   const handleRetry = (): void => {
+    if (cancellingRef.current) return
     setFailure(null)
     setStage('framing')
     setMsLeft(CALIBRATION_MS)
@@ -107,14 +137,14 @@ export function CalibrationScreen({
 
   const secondsLeft = Math.ceil(msLeft / 1000)
 
-  // Sound: a bell for each countdown second. Silence while framing.
+  // Sound: a bell for each countdown second. Silence while framing or cancelling.
   const cueRef = useRef<CueSnapshot | null>(null)
   useEffect(() => {
     emitSnapshot(cueRef, {
       phase: 'calibration',
-      calSecondsLeft: stage === 'calibrating' ? secondsLeft : null
+      calSecondsLeft: stage === 'calibrating' && !cancelling ? secondsLeft : null
     })
-  }, [stage, secondsLeft])
+  }, [stage, secondsLeft, cancelling])
   useEffect(
     () => () => {
       cueRef.current = null
@@ -130,8 +160,13 @@ export function CalibrationScreen({
         <p className="cal-who">Calibrating Hot Seat: {playerName}</p>
         <p className="error">{cameraError}</p>
         <div className="calibration-actions">
-          <button type="button" className="secondary-btn" onClick={onCancel}>
-            Back
+          <button
+            type="button"
+            className="secondary-btn"
+            disabled={cancelling}
+            onClick={handleCancel}
+          >
+            {cancelling ? 'Stopping camera…' : 'Back'}
           </button>
         </div>
         <Bug context="Calibration · camera unavailable" />
@@ -153,6 +188,16 @@ export function CalibrationScreen({
             <span className="validation">{hint}</span>
           </p>
           <p className="hint">Calibration starts once your face is clearly visible.</p>
+          <div className="calibration-actions">
+            <button
+              type="button"
+              className="secondary-btn"
+              disabled={cancelling}
+              onClick={handleCancel}
+            >
+              {cancelling ? 'Stopping camera…' : 'Cancel'}
+            </button>
+          </div>
         </>
       )}
 
@@ -177,6 +222,16 @@ export function CalibrationScreen({
           </div>
           <p className="validation">{hint}</p>
           <p className="hint">Challengers, stay quiet while we learn the resting face.</p>
+          <div className="calibration-actions">
+            <button
+              type="button"
+              className="secondary-btn"
+              disabled={cancelling}
+              onClick={handleCancel}
+            >
+              {cancelling ? 'Stopping camera…' : 'Cancel'}
+            </button>
+          </div>
         </>
       )}
 
@@ -186,15 +241,24 @@ export function CalibrationScreen({
           <p className="cal-who">Calibrating Hot Seat: {playerName}</p>
           <p className="error">{failure}</p>
           <div className="calibration-actions">
-            {retriesLeft > 0 ? (
-              <button type="button" className="primary-btn" onClick={handleRetry}>
+            {retriesLeft > 0 && (
+              <button
+                type="button"
+                className="primary-btn"
+                disabled={cancelling}
+                onClick={handleRetry}
+              >
                 Try Calibration Again ({retriesLeft} retries left)
               </button>
-            ) : (
-              <button type="button" className="secondary-btn" onClick={onCancel}>
-                Fix Camera Setup
-              </button>
             )}
+            <button
+              type="button"
+              className="secondary-btn"
+              disabled={cancelling}
+              onClick={handleCancel}
+            >
+              {cancelling ? 'Stopping camera…' : retriesLeft > 0 ? 'Cancel' : 'Back'}
+            </button>
           </div>
         </>
       )}

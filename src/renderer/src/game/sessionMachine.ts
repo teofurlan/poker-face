@@ -37,6 +37,7 @@ export function createSessionMachine(): {
   proceedToConsent: () => boolean
   confirmConsent: () => void
   startCalibration: () => void
+  cancelCalibration: () => void
   calibrationCompleted: (baseline: ExpressionScores) => void
   roundCompleted: (result: Omit<PlayerRoundResult, 'playerName'>) => void
   nextPlayerOrLeaderboard: () => void
@@ -93,6 +94,12 @@ export function createSessionMachine(): {
 
   function startCalibration(): void {
     phase = 'calibrating'
+  }
+
+  function cancelCalibration(): void {
+    if (phase !== 'calibrating') return
+    currentBaseline = null
+    phase = 'ready_player'
   }
 
   function calibrationCompleted(baseline: ExpressionScores): void {
@@ -181,6 +188,7 @@ export function createSessionMachine(): {
     proceedToConsent,
     confirmConsent,
     startCalibration,
+    cancelCalibration,
     calibrationCompleted,
     roundCompleted,
     nextPlayerOrLeaderboard,
